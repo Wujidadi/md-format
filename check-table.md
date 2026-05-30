@@ -47,6 +47,11 @@
 | \u231b  | ⌛        | False                                   | False                                      |
 | \u2328  | ⌨        | False                                   | False                                      |
 | \u23cf  | ⏏        | False                                   | False                                      |
+| \u25a0  | ■        | False                                   | False                                      |
+| \u25b2  | ▲        | True                                    | False                                      |
+| \u25b3  | △        | True                                    | False                                      |
+| \u25cb  | ○        | True                                    | False                                      |
+| \u25cf  | ●        | True                                    | False                                      |
 | \u2713  | ✓        | True                                    | False                                      |
 | \u2717  | ✗        | True                                    | False                                      |
 | \u2e80  | ⺀        | True                                    | False                                      |

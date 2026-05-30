@@ -55,6 +55,7 @@ module.exports = {
     '\u2030',        // per mille sign
     '\u203b',        // reference mark
     '\u2190-\u2193', // arrows (←↑→↓)
+    '\u25a0-\u25ff', // geometric shapes
     '\u2713',        // check mark ✓
     '\u2717',        // ballot x ✗
     '\u2e80-\u2eff', // CJK Radicals Supplement
