@@ -1,0 +1,24 @@
+{
+  "name": "md-format",
+  "version": "1.0.0",
+  "description": "Format Markdown files with Prettier and yzhang.markdown-all-in-one table alignment",
+  "main": "src/format.js",
+  "scripts": {
+    "format": "node format.js"
+  },
+  "dependencies": {
+    "grapheme-splitter": "^1.0.4",
+    "minimatch": "^10.2.5",
+    "prettier": "^3.8.3"
+  },
+  "license": "MIT",
+  "contributors": [
+    {
+      "name": "Claude Sonnet 4.6",
+      "url": "https://www.anthropic.com"
+    }
+  ],
+  "bin": {
+    "md-fmt": "src/format.js"
+  }
+}
