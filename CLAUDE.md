@@ -14,22 +14,27 @@ and performs table alignment alone.
 
 ## Development Commands
 
-This project has **no** test framework, linter, or build step. Development is driven by running
-the CLI manually to verify changes:
+This project has no linter or build step.
 
 ```sh
 npm install            # install dependencies
 npm link               # makes the md-fmt command available globally (note: the bin name is md-fmt, not md-format)
 
+npm test               # run the test suite (node:test); MUST be run from the project root,
+                       # because tableFormatter.js loads mdformat.config.js from cwd at load time
+node --test test/tableFormatter.test.js   # run a single test file
+
 # Run directly (without link)
 node src/format.js [options] <path> [<path> ...]
 
-# Preview changes without writing (the primary way to verify changes)
+# Preview changes without writing
 node src/format.js --dry-run ./check-table.md
 ```
 
-`check-table.md` is the test fixture in the project root, containing assorted CJK/Emoji/symbol
-tables; use it to manually verify that width calculations are correct.
+Tests live in `test/` and use Node's built-in test runner (no extra deps). They lock the current
+correct alignment output (ASCII/CJK/alignment markers/idempotency) plus code-fence awareness, so
+they double as regression snapshots. `check-table.md` is an additional manual fixture in the
+project root containing assorted CJK/Emoji/symbol tables.
 
 ## Architecture
 
@@ -67,7 +72,8 @@ idempotent (running it twice produces stable output).
 ### Formatting Flow (tableFormatter.js)
 
 1. `detectTables` uses a regular expression to find all table blocks in the text, returning
-   `{ text, index }`.
+   `{ text, index }`. It first computes fenced-code-block ranges (`findCodeFenceRanges`) and
+   discards any match that starts inside one, so pipe-tables shown as example code are left alone.
 2. `formatMarkdownTables` rewrites only the table blocks; **content outside tables is preserved
    untouched** (reassembled via index slicing).
 3. `formatTable` does two-pass processing: the first pass parses all cells and computes each

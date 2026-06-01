@@ -4,7 +4,8 @@
   "description": "Format Markdown files with Prettier and yzhang.markdown-all-in-one table alignment, with correct CJK/Emoji width handling",
   "main": "src/format.js",
   "scripts": {
-    "format": "node src/format.js"
+    "format": "node src/format.js",
+    "test": "node --test"
   },
   "dependencies": {
     "grapheme-splitter": "^1.0.4",

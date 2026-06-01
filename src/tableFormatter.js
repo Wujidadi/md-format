@@ -114,6 +114,40 @@ function padCell(cell, targetWidth, align) {
 }
 
 /**
+ * Find the [start, end) character ranges of fenced code blocks (``` or ~~~),
+ * following CommonMark fence rules closely enough for table masking: a fence
+ * opens on a line of 3+ backticks/tildes (indented ≤3 spaces) and closes on a
+ * later line of the same character whose run is at least as long, with nothing
+ * but whitespace after it. An unclosed fence runs to the end of the document.
+ */
+function findCodeFenceRanges(text) {
+  const ranges = [];
+  const lines = text.split('\n');
+  let offset = 0;
+  let open = null; // { char, len, start }
+  for (const line of lines) {
+    const lineStart = offset;
+    const lineEnd = offset + line.length;
+    offset = lineEnd + 1; // account for the '\n' separator
+    if (!open) {
+      const m = line.match(/^( {0,3})(`{3,}|~{3,})(.*)$/);
+      // For backtick fences the info string may not contain a backtick.
+      if (m && !(m[2][0] === '`' && m[3].includes('`'))) {
+        open = { char: m[2][0], len: m[2].length, start: lineStart };
+      }
+    } else {
+      const m = line.match(/^( {0,3})(`{3,}|~{3,})[ \t]*$/);
+      if (m && m[2][0] === open.char && m[2].length >= open.len) {
+        ranges.push([open.start, lineEnd + 1]);
+        open = null;
+      }
+    }
+  }
+  if (open) ranges.push([open.start, text.length]);
+  return ranges;
+}
+
+/**
  * Detect all Markdown tables in a text string.
  * Returns array of { text, index }
  */
@@ -138,8 +172,15 @@ function detectTables(text) {
     'g',
   );
 
+  // Skip "tables" that live inside fenced code blocks — they are content, not
+  // tables to format. A table match always begins on a content line (which has
+  // a pipe), so a fence line can't start one; checking the start index suffices.
+  const fences = findCodeFenceRanges(text);
+  const inFence = (idx) => fences.some(([s, e]) => idx >= s && idx < e);
+
   const results = [];
   for (const match of text.matchAll(tableRegex)) {
+    if (inFence(match.index)) continue;
     results.push({ text: match[0], index: match.index });
   }
   return results;
