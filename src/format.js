@@ -60,11 +60,20 @@ function loadIgnorePatterns() {
 
 const ignorePatterns = loadIgnorePatterns();
 
-function isIgnored(filePath) {
-  const rel = path.relative(process.cwd(), filePath).replace(/\\/g, '/');
-  return ignorePatterns.some((pattern) =>
-    minimatch(rel, pattern, { dot: true, matchBase: false }),
-  );
+// Match ignore patterns relative to the root being walked (not process.cwd()),
+// so node_modules/vendor/etc. are excluded even when the target lives elsewhere.
+function isIgnored(filePath, base) {
+  const rel = path.relative(base, filePath).replace(/\\/g, '/');
+  const opts = { dot: true, matchBase: false };
+  return ignorePatterns.some((pattern) => {
+    if (minimatch(rel, pattern, opts)) return true;
+    // Also match the pattern at any depth (gitignore-style), so an unanchored
+    // pattern like `node_modules/**` also excludes nested `resources/v3/node_modules/**`.
+    if (!pattern.startsWith('/') && !pattern.startsWith('**/')) {
+      return minimatch(rel, `**/${pattern}`, opts);
+    }
+    return false;
+  });
 }
 
 // ── Parse CLI args ────────────────────────────────────────────────────────────
@@ -116,22 +125,30 @@ if (targets.length === 0) {
 
 // ── Collect .md files ─────────────────────────────────────────────────────────
 
-function collectMdFiles(target, isRoot = false) {
+function collectMdFiles(target, root = null) {
   const resolved = path.resolve(target);
-  if (!isRoot && isIgnored(resolved)) return [];
-  const stat = fs.statSync(resolved);
+  const isRoot = root === null;
+  const base = root ?? resolved; // ignore-pattern base = the top-level target
+  if (!isRoot && isIgnored(resolved, base)) return [];
+  // throwIfNoEntry: false returns undefined instead of throwing on ENOENT, which
+  // covers dangling symlinks (statSync follows the link and the target is missing).
+  const stat = fs.statSync(resolved, { throwIfNoEntry: false });
+  if (!stat) {
+    if (isRoot) console.error(`warning: path not found, skipping: ${target}`);
+    return [];
+  }
   if (stat.isFile()) {
     return resolved.endsWith('.md') ? [resolved] : [];
   }
   if (stat.isDirectory()) {
     return fs
       .readdirSync(resolved)
-      .flatMap((name) => collectMdFiles(path.join(resolved, name)));
+      .flatMap((name) => collectMdFiles(path.join(resolved, name), base));
   }
   return [];
 }
 
-const files = targets.flatMap((t) => collectMdFiles(t, true));
+const files = targets.flatMap((t) => collectMdFiles(t));
 
 if (files.length === 0) {
   console.log('No .md files found.');
@@ -152,12 +169,39 @@ let unchanged = 0;
     // and break on full-width characters). --tables-only skips step ①.
     let formatted = original;
     if (!options.tablesOnly) {
-      const prettierConfig = (await prettier.resolveConfig(file)) || {};
-      formatted = await prettier.format(formatted, {
-        ...DEFAULT_PRETTIER_OPTIONS,
-        ...prettierConfig,
-        parser: 'markdown',
-      });
+      // A target-local Prettier config may reference plugins/shared configs that
+      // aren't resolvable from here; don't let one bad config abort the whole run.
+      let prettierConfig = {};
+      try {
+        prettierConfig = (await prettier.resolveConfig(file)) || {};
+      } catch (err) {
+        console.error(
+          `warning: ignoring unresolvable Prettier config for ${file}: ${err.message}`,
+        );
+      }
+      try {
+        formatted = await prettier.format(original, {
+          ...DEFAULT_PRETTIER_OPTIONS,
+          ...prettierConfig,
+          parser: 'markdown',
+        });
+      } catch (err) {
+        // The resolved config may pull in a plugin we can't load; retry with our
+        // built-in defaults only, and if even that fails, leave it unformatted.
+        console.error(
+          `warning: Prettier failed for ${file} (${err.message}); retrying with built-in defaults`,
+        );
+        try {
+          formatted = await prettier.format(original, {
+            ...DEFAULT_PRETTIER_OPTIONS,
+            parser: 'markdown',
+          });
+        } catch (err2) {
+          console.error(
+            `warning: Prettier still failed for ${file} (${err2.message}); leaving content unformatted`,
+          );
+        }
+      }
     }
     formatted = formatMarkdownTables(formatted, options);
 
