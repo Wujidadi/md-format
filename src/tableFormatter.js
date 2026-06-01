@@ -31,8 +31,6 @@ function loadConfig() {
   return {};
 }
 
-const config = loadConfig();
-
 // Double-width character ranges (Emoji + CJK)
 
 const DEFAULT_DOUBLE_WIDTH_RANGES = [
@@ -61,31 +59,42 @@ const DEFAULT_NARROW_OVERRIDE_RANGES = [
   '\u2139', // ℹ Information Source
 ];
 
-const doubleWidthUnicodeRanges = (
-  config.doubleWidthUnicodeRanges ?? DEFAULT_DOUBLE_WIDTH_RANGES
-).join('');
+/**
+ * Build the double-width / narrow-override matchers from a width config object
+ * (shape: { doubleWidthUnicodeRanges?, narrowOverrideUnicodeRanges? }). Missing
+ * fields fall back to the built-in defaults.
+ */
+function buildWidthMatchers(config = {}) {
+  const doubleWidthUnicodeRanges = (
+    config.doubleWidthUnicodeRanges ?? DEFAULT_DOUBLE_WIDTH_RANGES
+  ).join('');
+  const narrowOverrideUnicodeRanges = (
+    config.narrowOverrideUnicodeRanges ?? DEFAULT_NARROW_OVERRIDE_RANGES
+  ).join('');
+  return {
+    doubleWidthRegex: new RegExp(
+      `[\\p{Extended_Pictographic}${doubleWidthUnicodeRanges}]`,
+      'gu',
+    ),
+    narrowOverrideRegex: new RegExp(`[${narrowOverrideUnicodeRanges}]`, 'gu'),
+  };
+}
 
-const narrowOverrideUnicodeRanges = (
-  config.narrowOverrideUnicodeRanges ?? DEFAULT_NARROW_OVERRIDE_RANGES
-).join('');
-
-const doubleWidthRegex = new RegExp(
-  `[\\p{Extended_Pictographic}${doubleWidthUnicodeRanges}]`,
-  'gu',
-);
-
-const narrowOverrideRegex = new RegExp(
-  `[${narrowOverrideUnicodeRanges}]`,
-  'gu',
-);
+// Lazily-built matchers from mdformat.config.js in cwd, so require()-ing this
+// module has no filesystem side effects. Cached after first use.
+let defaultMatchers = null;
+function getDefaultMatchers() {
+  if (!defaultMatchers) defaultMatchers = buildWidthMatchers(loadConfig());
+  return defaultMatchers;
+}
 
 /**
  * Calculate visual width of a string (CJK/Emoji = 2, others = 1)
  */
-function visualWidth(str) {
+function visualWidth(str, matchers) {
   const graphemeCount = splitter.countGraphemes(str);
-  const doubleWidthChars = str.match(doubleWidthRegex);
-  const narrowOverrideChars = str.match(narrowOverrideRegex);
+  const doubleWidthChars = str.match(matchers.doubleWidthRegex);
+  const narrowOverrideChars = str.match(matchers.narrowOverrideRegex);
   return (
     graphemeCount +
     (doubleWidthChars ? doubleWidthChars.length : 0) -
@@ -96,8 +105,8 @@ function visualWidth(str) {
 /**
  * Pad a string to the target visual width with spaces (left-aligned by default)
  */
-function padCell(cell, targetWidth, align) {
-  const w = visualWidth(cell);
+function padCell(cell, targetWidth, align, matchers) {
+  const w = visualWidth(cell, matchers);
   const pad = targetWidth - w;
   if (pad <= 0) return cell;
   switch (align) {
@@ -200,6 +209,7 @@ function formatTable(tableText, options = {}) {
     delimiterRowNoPadding = false,
     normalizeIndentation = false,
     tabSize = 4,
+    matchers = getDefaultMatchers(),
   } = options;
 
   // NFC normalize
@@ -242,7 +252,7 @@ function formatTable(tableText, options = {}) {
         iCol++;
         continue;
       }
-      const w = visualWidth(cell);
+      const w = visualWidth(cell, matchers);
       colWidth[iCol] = Math.max(colWidth[iCol] || 0, w);
       iCol++;
     }
@@ -302,6 +312,7 @@ function formatTable(tableText, options = {}) {
           cell,
           colWidth[iCol] || 0,
           colAlign[iCol] ?? ColumnAlignment.None,
+          matchers,
         );
       });
       return indentation + '| ' + cells.join(' | ') + ' |';
@@ -317,16 +328,31 @@ function formatMarkdownTables(content, options = {}) {
   const tables = detectTables(content);
   if (tables.length === 0) return content;
 
+  // Resolve width matchers once per document. Callers may inject a width config
+  // (options.widthConfig) or pre-built matchers (options.matchers); otherwise the
+  // lazily-loaded cwd config is used. Keeps the regex build out of the per-table
+  // loop and out of module load.
+  const matchers =
+    options.matchers ??
+    (options.widthConfig
+      ? buildWidthMatchers(options.widthConfig)
+      : getDefaultMatchers());
+
   let result = '';
   let lastIndex = 0;
 
   for (const table of tables) {
     result += content.slice(lastIndex, table.index);
-    result += formatTable(table.text, options);
+    result += formatTable(table.text, { ...options, matchers });
     lastIndex = table.index + table.text.length;
   }
   result += content.slice(lastIndex);
   return result;
 }
 
-module.exports = { formatMarkdownTables, formatTable, detectTables };
+module.exports = {
+  formatMarkdownTables,
+  formatTable,
+  detectTables,
+  buildWidthMatchers,
+};

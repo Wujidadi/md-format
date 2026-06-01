@@ -20,8 +20,7 @@ This project has no linter or build step.
 npm install            # install dependencies
 npm link               # makes the md-fmt command available globally (note: the bin name is md-fmt, not md-format)
 
-npm test               # run the test suite (node:test); MUST be run from the project root,
-                       # because tableFormatter.js loads mdformat.config.js from cwd at load time
+npm test               # run the test suite (node:test); runnable from any cwd
 node --test test/tableFormatter.test.js   # run a single test file
 
 # Run directly (without link)
@@ -85,15 +84,21 @@ idempotent (running it twice produces stable output).
 `visualWidth()` is where this tool primarily differs from the original VS Code extension:
 
 - Uses `grapheme-splitter` to count graphemes, avoiding miscounting of Emoji combining sequences.
-- `doubleWidthRegex` combines `\p{Extended_Pictographic}` with a set of Unicode ranges to count
+- A `doubleWidthRegex` combines `\p{Extended_Pictographic}` with a set of Unicode ranges to count
   CJK/Emoji as width 2.
-- `narrowOverrideRegex` "subtracts back" characters that `\p{Extended_Pictographic}` misjudges but
-  that actually render as half-width (e.g. ™, ℹ).
+- A `narrowOverrideRegex` "subtracts back" characters that `\p{Extended_Pictographic}` misjudges
+  but that actually render as half-width (e.g. ™, ℹ).
+
+These regexes are built by `buildWidthMatchers(config)` from a width config and passed down through
+`formatMarkdownTables → formatTable → padCell/visualWidth`. Resolution is **lazy, not at module
+load** (so `require`-ing the module has no filesystem side effects): `formatMarkdownTables` uses
+`options.matchers`, else builds from `options.widthConfig`, else falls back to `getDefaultMatchers()`
+which reads `mdformat.config.js` from cwd once and caches it. The CLI relies on that cwd default;
+tests inject `widthConfig` so they are deterministic and cwd-independent.
 
 When adjusting character-width determination, edit `mdformat.config.js` (override
 `doubleWidthUnicodeRanges` and `narrowOverrideUnicodeRanges`) rather than the source defaults
-directly. The config is loaded via `require(process.cwd()/mdformat.config.js)`, and silently falls
-back to the built-in defaults if it is missing or fails to load.
+directly. A missing or malformed config silently falls back to the built-in defaults.
 
 ## CLI Options
 
