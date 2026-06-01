@@ -46,6 +46,51 @@ test('--check exits zero when everything is already formatted', () => {
   }
 });
 
+test('excludes ignored directories at any depth (nested node_modules)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdfmt-'));
+  try {
+    fs.mkdirSync(path.join(dir, 'pkg', 'node_modules', 'dep'), {
+      recursive: true,
+    });
+    fs.writeFileSync(path.join(dir, 'pkg', 'real.md'), UNFORMATTED);
+    fs.writeFileSync(
+      path.join(dir, 'pkg', 'node_modules', 'dep', 'README.md'),
+      UNFORMATTED,
+    );
+    const res = run(['--dry-run', '--tables-only', dir]);
+    assert.strictEqual(res.status, 0, res.stdout + res.stderr);
+    assert.match(res.stdout, /pkg[/\\]real\.md/);
+    assert.doesNotMatch(res.stdout, /node_modules/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('processes .markdown files too', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdfmt-'));
+  try {
+    const file = path.join(dir, 'doc.markdown');
+    fs.writeFileSync(file, UNFORMATTED);
+    const res = run(['--check', '--tables-only', file]);
+    assert.strictEqual(res.status, 1, res.stdout + res.stderr);
+    assert.match(res.stdout, /doc\.markdown/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('rejects an unknown option with a non-zero exit', () => {
+  const res = run(['--bogus', '.']);
+  assert.strictEqual(res.status, 1);
+  assert.match(res.stderr, /unknown option: --bogus/);
+});
+
+test('rejects an invalid --tab-size', () => {
+  const res = run(['--tab-size', 'abc', '.']);
+  assert.strictEqual(res.status, 1);
+  assert.match(res.stderr, /--tab-size requires a positive integer/);
+});
+
 test('does not recurse forever on a symlink cycle', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdfmt-'));
   try {

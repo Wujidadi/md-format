@@ -40,9 +40,10 @@ project root containing assorted CJK/Emoji/symbol tables.
 Just two source files, with clearly separated responsibilities:
 
 - **`src/format.js`** — CLI entry point (`bin: md-fmt`). Responsible for: parsing arguments, loading
-  `.mdformatignore` rules (matched with `minimatch`; falls back to `DEFAULT_IGNORE_PATTERNS` when
-  the file is absent), recursively collecting `.md` files, then running the "Prettier → table
-  alignment" pipeline per file and writing back depending on `--dry-run`.
+  `.mdformatignore` rules via the `ignore` package (full `.gitignore` semantics; falls back to the
+  bare-name `DEFAULT_IGNORE_PATTERNS` when the file is absent), recursively collecting `.md`/`.markdown`
+  files (skipping ignored paths, dangling symlinks, and symlink cycles), then running the
+  "Prettier → table alignment" pipeline per file and writing back unless `--dry-run`/`--check`.
 - **`src/tableFormatter.js`** — table alignment logic, exporting `formatMarkdownTables`,
   `formatTable`, and `detectTables`.
 

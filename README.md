@@ -94,15 +94,28 @@ If no config file is present, the defaults above are used.
 
 ## Excluding Files
 
-Create a `.mdformatignore` file in the project root using the same syntax as
-`.gitignore`. The following are always excluded regardless:
+`md-fmt` recursively formats files ending in `.md` or `.markdown`.
 
-- `node_modules/`
-- `.git/`
+Create a `.mdformatignore` file to control what is skipped. It uses full
+`.gitignore` syntax (anchoring, negation with `!`, comments, any-depth matching),
+matched relative to each target root. If the file is present it **replaces** the
+built-in defaults; if it is absent, these defaults are used:
+
+```
+node_modules
+vendor
+.git
+dist
+build
+.cache
+```
+
+Symlink cycles are detected (a directory is walked at most once by real path), and
+dangling symlinks are skipped.
 
 ## Requirements
 
-- Node.js 16+
+- Node.js 18+ (uses the built-in `node --test` runner for `npm test`)
 - npm
 
 ## License

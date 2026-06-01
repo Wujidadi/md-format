@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const prettier = require('prettier');
 const { formatMarkdownTables } = require('./tableFormatter');
-const { minimatch } = require('minimatch');
+const ignore = require('ignore');
 
 // ── Usage ────────────────────────────────────────────────────────────---------
 
@@ -36,45 +36,40 @@ const DEFAULT_PRETTIER_OPTIONS = {
 
 // ── Default ignore patterns ───────────────────────────────────────────────────
 
+// Bare directory names (not `node_modules/**`): an unanchored gitignore pattern
+// matches at any depth, so nested node_modules/vendor/etc. are excluded too.
 const DEFAULT_IGNORE_PATTERNS = [
-  'node_modules/**',
-  'vendor/**',
-  '.git/**',
-  'dist/**',
-  'build/**',
-  '.cache/**',
+  'node_modules',
+  'vendor',
+  '.git',
+  'dist',
+  'build',
+  '.cache',
 ];
 
 // ── Load .mdformatignore ──────────────────────────────────────────────────────
 
-function loadIgnorePatterns() {
+// Build a gitignore matcher from .mdformatignore (cwd) or the built-in defaults.
+// The `ignore` package implements full .gitignore semantics (anchoring, negation,
+// comments, any-depth matching), so .mdformatignore behaves exactly like .gitignore.
+function buildIgnore() {
+  const ig = ignore();
   const ignoreFile = path.resolve(process.cwd(), '.mdformatignore');
   if (fs.existsSync(ignoreFile)) {
-    return fs
-      .readFileSync(ignoreFile, 'utf8')
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l && !l.startsWith('#'));
+    ig.add(fs.readFileSync(ignoreFile, 'utf8'));
+  } else {
+    ig.add(DEFAULT_IGNORE_PATTERNS);
   }
-  return DEFAULT_IGNORE_PATTERNS;
+  return ig;
 }
 
-const ignorePatterns = loadIgnorePatterns();
+const ig = buildIgnore();
 
-// Match ignore patterns relative to the root being walked (not process.cwd()),
-// so node_modules/vendor/etc. are excluded even when the target lives elsewhere.
+// Match relative to the root being walked (not process.cwd()), so the ignore
+// rules apply correctly even when the target lives elsewhere.
 function isIgnored(filePath, base) {
   const rel = path.relative(base, filePath).replace(/\\/g, '/');
-  const opts = { dot: true, matchBase: false };
-  return ignorePatterns.some((pattern) => {
-    if (minimatch(rel, pattern, opts)) return true;
-    // Also match the pattern at any depth (gitignore-style), so an unanchored
-    // pattern like `node_modules/**` also excludes nested `resources/v3/node_modules/**`.
-    if (!pattern.startsWith('/') && !pattern.startsWith('**/')) {
-      return minimatch(rel, `**/${pattern}`, opts);
-    }
-    return false;
-  });
+  return rel !== '' && ig.ignores(rel);
 }
 
 // ── Parse CLI args ────────────────────────────────────────────────────────────
@@ -113,10 +108,24 @@ for (let i = 0; i < args.length; i++) {
     case '--normalize-indent':
       options.normalizeIndentation = true;
       break;
-    case '--tab-size':
-      options.tabSize = parseInt(args[++i], 10);
+    case '--tab-size': {
+      const raw = args[++i];
+      const n = parseInt(raw, 10);
+      if (Number.isNaN(n) || n < 1) {
+        console.error(
+          `error: --tab-size requires a positive integer (got ${raw ?? '<nothing>'})`,
+        );
+        process.exit(1);
+      }
+      options.tabSize = n;
       break;
+    }
     default:
+      if (args[i].startsWith('-')) {
+        console.error(`error: unknown option: ${args[i]}`);
+        console.error(HELP);
+        process.exit(1);
+      }
       targets.push(args[i]);
   }
 }
@@ -145,7 +154,7 @@ function collectMdFiles(target, root = null) {
     return [];
   }
   if (stat.isFile()) {
-    return resolved.endsWith('.md') ? [resolved] : [];
+    return /\.(md|markdown)$/i.test(resolved) ? [resolved] : [];
   }
   if (stat.isDirectory()) {
     // Guard against symlink cycles: resolve to the real path and skip if already
