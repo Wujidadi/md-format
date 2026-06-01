@@ -1,10 +1,10 @@
 {
   "name": "md-format",
   "version": "1.0.0",
-  "description": "Format Markdown files with Prettier and yzhang.markdown-all-in-one table alignment",
+  "description": "Format Markdown files with Prettier and yzhang.markdown-all-in-one table alignment, with correct CJK/Emoji width handling",
   "main": "src/format.js",
   "scripts": {
-    "format": "node format.js"
+    "format": "node src/format.js"
   },
   "dependencies": {
     "grapheme-splitter": "^1.0.4",

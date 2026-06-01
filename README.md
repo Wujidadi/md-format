@@ -1,6 +1,10 @@
 # md-format
 
-A CLI tool to recursively format Markdown tables, based on the [yzhang.markdown-all-in-one](https://github.com/yzhang-gh/vscode-markdown) table alignment algorithm — with correct CJK and Emoji character width handling.
+A CLI tool to recursively format Markdown files. It runs [Prettier](https://prettier.io) for
+general Markdown formatting, then re-aligns tables using the
+[yzhang.markdown-all-in-one](https://github.com/yzhang-gh/vscode-markdown) table alignment
+algorithm — with correct CJK and Emoji character width handling (which Prettier's byte-based
+alignment gets wrong). Use `--tables-only` to skip Prettier and align tables alone.
 
 ## Installation
 
@@ -11,12 +15,12 @@ npm install
 npm link
 ```
 
-After `npm link`, the `md-format` command is available globally.
+After `npm link`, the `md-fmt` command is available globally.
 
 ## Usage
 
 ```sh
-md-format [options] <directory|file> [<directory|file> ...]
+md-fmt [options] <directory|file> [<directory|file> ...]
 ```
 
 ### Options
@@ -25,6 +29,7 @@ md-format [options] <directory|file> [<directory|file> ...]
 | -------------------- | ------------------------------------------- | ------- |
 | `-h, --help`         | Show help message                           | —      |
 | `-d, --dry-run`      | Print what would be changed without writing | `false` |
+| `--tables-only`      | Only align tables; skip Prettier formatting | `false` |
 | `--delimiter-no-pad` | Enable `delimiterRowNoPadding`              | `false` |
 | `--normalize-indent` | Enable `normalizeIndentation`               | `false` |
 | `--tab-size <n>`     | Tab size for indentation normalization      | `4`     |
@@ -33,16 +38,23 @@ md-format [options] <directory|file> [<directory|file> ...]
 
 ```sh
 # Format all .md files under ./docs
-md-format ./docs
+md-fmt ./docs
 
 # Preview changes without writing
-md-format --dry-run ./docs
+md-fmt --dry-run ./docs
 
 # Format a single file
-md-format ./README.md
+md-fmt ./README.md
 ```
 
 ## Configuration
+
+Prettier formatting respects a standard `.prettierrc`, resolved **relative to each target file's
+location** via Prettier's own config lookup (not relative to where `md-fmt` runs). On top of that,
+`md-fmt` always applies a built-in default of `embeddedLanguageFormatting: "off"`, so fenced code
+blocks (JSON, JS, etc.) are left untouched — this preserves things like multi-line JSON arrays and
+single-quoted JS regardless of the target location. A target-local `.prettierrc` can override this
+default. The table alignment step is configured separately:
 
 Place a `mdformat.config.js` in the project root to override the default character width ranges:
 

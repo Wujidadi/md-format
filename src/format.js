@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const prettier = require('prettier');
 const { formatMarkdownTables } = require('./tableFormatter');
 const { minimatch } = require('minimatch');
 
@@ -15,10 +16,22 @@ Usage:
 Options:
   -h, --help           Show this help message
   --dry-run            Print what would be changed without writing
+  --tables-only        Only align tables; skip Prettier formatting (default: false)
   --delimiter-no-pad   Enable delimiterRowNoPadding (default: false)
   --normalize-indent   Enable normalizeIndentation (default: false)
   --tab-size <n>       Tab size for indentation normalization (default: 4)
 `;
+
+// ── Default Prettier options ──────────────────────────────────────────────────
+
+// Applied as the floor for every file so md-fmt behaves consistently regardless
+// of where the target Markdown lives. A target-local .prettierrc can override these.
+// `embeddedLanguageFormatting: 'off'` leaves all fenced code blocks untouched — the
+// only way to both preserve multi-line JSON arrays (e.g. "fields": ["*"]) and keep
+// JS single quotes, since Prettier has no per-rule switch for embedded code.
+const DEFAULT_PRETTIER_OPTIONS = {
+  embeddedLanguageFormatting: 'off',
+};
 
 // ── Default ignore patterns ───────────────────────────────────────────────────
 
@@ -59,6 +72,7 @@ function isIgnored(filePath) {
 const args = process.argv.slice(2);
 const options = {
   dryRun: false,
+  tablesOnly: false,
   delimiterRowNoPadding: false,
   normalizeIndentation: false,
   tabSize: 4,
@@ -76,6 +90,9 @@ for (let i = 0; i < args.length; i++) {
     case '--dry-run':
       options.dryRun = true;
       break;
+    case '--tables-only':
+      options.tablesOnly = true;
+      break;
     case '--delimiter-no-pad':
       options.delimiterRowNoPadding = true;
       break;
@@ -92,7 +109,7 @@ for (let i = 0; i < args.length; i++) {
 
 if (targets.length === 0) {
   console.error(
-    'Usage: md-fmt [--dry-run] [--delimiter-no-pad] [--normalize-indent] [--tab-size <n>] <path> [<path> ...]',
+    'Usage: md-fmt [--dry-run] [--tables-only] [--delimiter-no-pad] [--normalize-indent] [--tab-size <n>] <path> [<path> ...]',
   );
   process.exit(1);
 }
@@ -129,7 +146,20 @@ let unchanged = 0;
 (async () => {
   for (const file of files) {
     const original = fs.readFileSync(file, 'utf8');
-    const formatted = formatMarkdownTables(original, options);
+
+    // ① Run Prettier first for general Markdown formatting, then ② re-align
+    // tables with CJK/Emoji-aware widths (Prettier's table widths are byte-based
+    // and break on full-width characters). --tables-only skips step ①.
+    let formatted = original;
+    if (!options.tablesOnly) {
+      const prettierConfig = (await prettier.resolveConfig(file)) || {};
+      formatted = await prettier.format(formatted, {
+        ...DEFAULT_PRETTIER_OPTIONS,
+        ...prettierConfig,
+        parser: 'markdown',
+      });
+    }
+    formatted = formatMarkdownTables(formatted, options);
 
     if (formatted === original) {
       unchanged++;
