@@ -25,14 +25,15 @@ md-fmt [options] <directory|file> [<directory|file> ...]
 
 ### Options
 
-| Option               | Description                                 | Default |
-| -------------------- | ------------------------------------------- | ------- |
-| `-h, --help`         | Show help message                           | —      |
-| `-d, --dry-run`      | Print what would be changed without writing | `false` |
-| `--tables-only`      | Only align tables; skip Prettier formatting | `false` |
-| `--delimiter-no-pad` | Enable `delimiterRowNoPadding`              | `false` |
-| `--normalize-indent` | Enable `normalizeIndentation`               | `false` |
-| `--tab-size <n>`     | Tab size for indentation normalization      | `4`     |
+| Option               | Description                                         | Default |
+| -------------------- | --------------------------------------------------- | ------- |
+| `-h, --help`         | Show help message                                   | —      |
+| `-d, --dry-run`      | Print what would be changed without writing         | `false` |
+| `--check`            | Exit non-zero if any file needs formatting (for CI) | `false` |
+| `--tables-only`      | Only align tables; skip Prettier formatting         | `false` |
+| `--delimiter-no-pad` | Enable `delimiterRowNoPadding`                      | `false` |
+| `--normalize-indent` | Enable `normalizeIndentation`                       | `false` |
+| `--tab-size <n>`     | Tab size for indentation normalization              | `4`     |
 
 ### Examples
 

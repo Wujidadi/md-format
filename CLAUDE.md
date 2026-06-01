@@ -99,7 +99,8 @@ back to the built-in defaults if it is missing or fails to load.
 
 Mirroring the VS Code extension's setting names:
 
-- `--dry-run` / `-d`: only list the files that would change, without writing.
+- `--dry-run` / `-d`: only list the files that would change, without writing (always exits 0).
+- `--check`: like `--dry-run` but exits non-zero when any file needs formatting — for CI gates.
 - `--tables-only`: skip Prettier and only align tables (restores the earlier "tables-only",
   surgical behavior).
 - `--delimiter-no-pad`: corresponds to `markdown.extension.tableFormatter.delimiterRowNoPadding`.

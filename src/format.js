@@ -16,6 +16,7 @@ Usage:
 Options:
   -h, --help           Show this help message
   --dry-run            Print what would be changed without writing
+  --check              Like --dry-run, but exit non-zero if any file needs formatting
   --tables-only        Only align tables; skip Prettier formatting (default: false)
   --delimiter-no-pad   Enable delimiterRowNoPadding (default: false)
   --normalize-indent   Enable normalizeIndentation (default: false)
@@ -81,6 +82,7 @@ function isIgnored(filePath, base) {
 const args = process.argv.slice(2);
 const options = {
   dryRun: false,
+  check: false,
   tablesOnly: false,
   delimiterRowNoPadding: false,
   normalizeIndentation: false,
@@ -98,6 +100,9 @@ for (let i = 0; i < args.length; i++) {
     case '-d':
     case '--dry-run':
       options.dryRun = true;
+      break;
+    case '--check':
+      options.check = true;
       break;
     case '--tables-only':
       options.tablesOnly = true;
@@ -118,12 +123,14 @@ for (let i = 0; i < args.length; i++) {
 
 if (targets.length === 0) {
   console.error(
-    'Usage: md-fmt [--dry-run] [--tables-only] [--delimiter-no-pad] [--normalize-indent] [--tab-size <n>] <path> [<path> ...]',
+    'Usage: md-fmt [--dry-run] [--check] [--tables-only] [--delimiter-no-pad] [--normalize-indent] [--tab-size <n>] <path> [<path> ...]',
   );
   process.exit(1);
 }
 
 // ── Collect .md files ─────────────────────────────────────────────────────────
+
+const visitedDirs = new Set();
 
 function collectMdFiles(target, root = null) {
   const resolved = path.resolve(target);
@@ -141,9 +148,27 @@ function collectMdFiles(target, root = null) {
     return resolved.endsWith('.md') ? [resolved] : [];
   }
   if (stat.isDirectory()) {
-    return fs
-      .readdirSync(resolved)
-      .flatMap((name) => collectMdFiles(path.join(resolved, name), base));
+    // Guard against symlink cycles: resolve to the real path and skip if already
+    // walked, so a link pointing back at an ancestor can't recurse forever.
+    let real = resolved;
+    try {
+      real = fs.realpathSync(resolved);
+    } catch {
+      // keep `resolved` if the real path can't be determined
+    }
+    if (visitedDirs.has(real)) return [];
+    visitedDirs.add(real);
+
+    let entries;
+    try {
+      entries = fs.readdirSync(resolved);
+    } catch (err) {
+      console.error(`warning: cannot read directory ${resolved}: ${err.message}`);
+      return [];
+    }
+    return entries.flatMap((name) =>
+      collectMdFiles(path.join(resolved, name), base),
+    );
   }
   return [];
 }
@@ -159,10 +184,19 @@ if (files.length === 0) {
 
 let changed = 0;
 let unchanged = 0;
+let errored = 0;
+const preview = options.dryRun || options.check; // neither mode writes files
 
 (async () => {
   for (const file of files) {
-    const original = fs.readFileSync(file, 'utf8');
+    let original;
+    try {
+      original = fs.readFileSync(file, 'utf8');
+    } catch (err) {
+      errored++;
+      console.error(`warning: cannot read ${file}: ${err.message}`);
+      continue;
+    }
 
     // ① Run Prettier first for general Markdown formatting, then ② re-align
     // tables with CJK/Emoji-aware widths (Prettier's table widths are byte-based
@@ -203,29 +237,49 @@ let unchanged = 0;
         }
       }
     }
-    formatted = formatMarkdownTables(formatted, options);
+    try {
+      formatted = formatMarkdownTables(formatted, options);
+    } catch (err) {
+      errored++;
+      console.error(`warning: failed to format ${file}: ${err.message}`);
+      continue;
+    }
 
     if (formatted === original) {
       unchanged++;
       continue;
     }
 
-    changed++;
-    if (options.dryRun) {
-      console.log(`[dry-run] would format: ${file}`);
+    if (preview) {
+      changed++;
+      console.log(
+        `[${options.check ? 'check' : 'dry-run'}] would format: ${file}`,
+      );
     } else {
-      fs.writeFileSync(file, formatted, 'utf8');
-      console.log(`formatted: ${file}`);
+      try {
+        fs.writeFileSync(file, formatted, 'utf8');
+        changed++;
+        console.log(`formatted: ${file}`);
+      } catch (err) {
+        errored++;
+        console.error(`warning: cannot write ${file}: ${err.message}`);
+      }
     }
   }
 
-  if (options.dryRun) {
+  const errSuffix = errored ? ` ${errored} error(s).` : '';
+  if (preview) {
     console.log(
-      `\nDone. ${changed} file(s) would be formatted, ${unchanged} file(s) already up-to-date.`,
+      `\nDone. ${changed} file(s) would be formatted, ${unchanged} file(s) already up-to-date.${errSuffix}`,
     );
   } else {
     console.log(
-      `\nDone. ${changed} file(s) changed, ${unchanged} file(s) unchanged.`,
+      `\nDone. ${changed} file(s) changed, ${unchanged} file(s) unchanged.${errSuffix}`,
     );
+  }
+
+  // Non-zero exit for CI: --check found drift, or some file could not be processed.
+  if (errored > 0 || (options.check && changed > 0)) {
+    process.exitCode = 1;
   }
 })();
