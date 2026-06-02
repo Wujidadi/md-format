@@ -25,19 +25,18 @@ Options:
 
 // ── Default Prettier options ──────────────────────────────────────────────────
 
-// Applied as the floor for every file so md-fmt behaves consistently regardless
-// of where the target Markdown lives. A target-local .prettierrc can override these.
-// `embeddedLanguageFormatting: 'off'` leaves all fenced code blocks untouched — the
-// only way to both preserve multi-line JSON arrays (e.g. "fields": ["*"]) and keep
-// JS single quotes, since Prettier has no per-rule switch for embedded code.
+// Applied as the floor for every file so md-fmt behaves consistently regardless of where the target Markdown lives.
+// A target-local .prettierrc can override these.
+// `embeddedLanguageFormatting: 'off'` leaves all fenced code blocks untouched
+// — the only way to both preserve multi-line JSON arrays (e.g. "fields": ["*"]) and keep JS single quotes, since Prettier has no per-rule switch for embedded code.
 const DEFAULT_PRETTIER_OPTIONS = {
   embeddedLanguageFormatting: 'off',
 };
 
 // ── Default ignore patterns ───────────────────────────────────────────────────
 
-// Bare directory names (not `node_modules/**`): an unanchored gitignore pattern
-// matches at any depth, so nested node_modules/vendor/etc. are excluded too.
+// Bare directory names (not `node_modules/**`):
+// an unanchored gitignore pattern matches at any depth, so nested node_modules/vendor/etc. are excluded too.
 const DEFAULT_IGNORE_PATTERNS = [
   'node_modules',
   'vendor',
@@ -50,8 +49,7 @@ const DEFAULT_IGNORE_PATTERNS = [
 // ── Load .mdformatignore ──────────────────────────────────────────────────────
 
 // Build a gitignore matcher from .mdformatignore (cwd) or the built-in defaults.
-// The `ignore` package implements full .gitignore semantics (anchoring, negation,
-// comments, any-depth matching), so .mdformatignore behaves exactly like .gitignore.
+// The `ignore` package implements full .gitignore semantics (anchoring, negation, comments, any-depth matching), so .mdformatignore behaves exactly like .gitignore.
 function buildIgnore() {
   const ig = ignore();
   const ignoreFile = path.resolve(process.cwd(), '.mdformatignore');
@@ -65,8 +63,7 @@ function buildIgnore() {
 
 const ig = buildIgnore();
 
-// Match relative to the root being walked (not process.cwd()), so the ignore
-// rules apply correctly even when the target lives elsewhere.
+// Match relative to the root being walked (not process.cwd()), so the ignore rules apply correctly even when the target lives elsewhere.
 function isIgnored(filePath, base) {
   const rel = path.relative(base, filePath).replace(/\\/g, '/');
   return rel !== '' && ig.ignores(rel);
@@ -146,8 +143,7 @@ function collectMdFiles(target, root = null) {
   const isRoot = root === null;
   const base = root ?? resolved; // ignore-pattern base = the top-level target
   if (!isRoot && isIgnored(resolved, base)) return [];
-  // throwIfNoEntry: false returns undefined instead of throwing on ENOENT, which
-  // covers dangling symlinks (statSync follows the link and the target is missing).
+  // throwIfNoEntry: false returns undefined instead of throwing on ENOENT, which covers dangling symlinks (statSync follows the link and the target is missing).
   const stat = fs.statSync(resolved, { throwIfNoEntry: false });
   if (!stat) {
     if (isRoot) console.error(`warning: path not found, skipping: ${target}`);
@@ -157,8 +153,7 @@ function collectMdFiles(target, root = null) {
     return /\.(md|markdown)$/i.test(resolved) ? [resolved] : [];
   }
   if (stat.isDirectory()) {
-    // Guard against symlink cycles: resolve to the real path and skip if already
-    // walked, so a link pointing back at an ancestor can't recurse forever.
+    // Guard against symlink cycles: resolve to the real path and skip if already walked, so a link pointing back at an ancestor can't recurse forever.
     let real = resolved;
     try {
       real = fs.realpathSync(resolved);
@@ -207,13 +202,11 @@ const preview = options.dryRun || options.check; // neither mode writes files
       continue;
     }
 
-    // ① Run Prettier first for general Markdown formatting, then ② re-align
-    // tables with CJK/Emoji-aware widths (Prettier's table widths are byte-based
-    // and break on full-width characters). --tables-only skips step ①.
+    // ① Run Prettier first for general Markdown formatting, then ② re-align tables with CJK/Emoji-aware widths (Prettier's table widths are byte-based and break on full-width characters).
+    // --tables-only skips step ①.
     let formatted = original;
     if (!options.tablesOnly) {
-      // A target-local Prettier config may reference plugins/shared configs that
-      // aren't resolvable from here; don't let one bad config abort the whole run.
+      // A target-local Prettier config may reference plugins/shared configs that aren't resolvable from here; don't let one bad config abort the whole run.
       let prettierConfig = {};
       try {
         prettierConfig = (await prettier.resolveConfig(file)) || {};
@@ -229,8 +222,8 @@ const preview = options.dryRun || options.check; // neither mode writes files
           parser: 'markdown',
         });
       } catch (err) {
-        // The resolved config may pull in a plugin we can't load; retry with our
-        // built-in defaults only, and if even that fails, leave it unformatted.
+        // The resolved config may pull in a plugin we can't load;
+        // retry with our built-in defaults only, and if even that fails, leave it unformatted.
         console.error(
           `warning: Prettier failed for ${file} (${err.message}); retrying with built-in defaults`,
         );

@@ -1,10 +1,9 @@
 # md-format
 
-A CLI tool to recursively format Markdown files. It runs [Prettier](https://prettier.io) for
-general Markdown formatting, then re-aligns tables using the
-[yzhang.markdown-all-in-one](https://github.com/yzhang-gh/vscode-markdown) table alignment
-algorithm — with correct CJK and Emoji character width handling (which Prettier's byte-based
-alignment gets wrong). Use `--tables-only` to skip Prettier and align tables alone.
+A CLI tool to recursively format Markdown files.
+It runs [Prettier](https://prettier.io) for general Markdown formatting, then re-aligns tables using the [yzhang.markdown-all-in-one](https://github.com/yzhang-gh/vscode-markdown) table alignment algorithm
+— with correct CJK and Emoji character width handling (which Prettier's byte-based alignment gets wrong).
+Use `--tables-only` to skip Prettier and align tables alone.
 
 ## Installation
 
@@ -50,12 +49,11 @@ md-fmt ./README.md
 
 ## Configuration
 
-Prettier formatting respects a standard `.prettierrc`, resolved **relative to each target file's
-location** via Prettier's own config lookup (not relative to where `md-fmt` runs). On top of that,
-`md-fmt` always applies a built-in default of `embeddedLanguageFormatting: "off"`, so fenced code
-blocks (JSON, JS, etc.) are left untouched — this preserves things like multi-line JSON arrays and
-single-quoted JS regardless of the target location. A target-local `.prettierrc` can override this
-default. The table alignment step is configured separately:
+Prettier formatting respects a standard `.prettierrc`, resolved **relative to each target file's location** via Prettier's own config lookup (not relative to where `md-fmt` runs).
+On top of that, `md-fmt` always applies a built-in default of `embeddedLanguageFormatting: "off"`, so fenced code blocks (JSON, JS, etc.) are left untouched
+— this preserves things like multi-line JSON arrays and single-quoted JS regardless of the target location.
+A target-local `.prettierrc` can override this default.
+The table alignment step is configured separately:
 
 Place a `mdformat.config.js` in the project root to override the default character width ranges:
 
@@ -81,8 +79,7 @@ module.exports = {
     '\ufe50-\ufe6f', // Small Form Variants
     '\uff01-\uff60', // Fullwidth ASCII variants
   ],
-  // Characters matched by \p{Extended_Pictographic} but rendered as
-  // narrow (1-width) in your font — subtract them back to width 1
+  // Characters matched by \p{Extended_Pictographic} but rendered as narrow (1-width) in your font — subtract them back to width 1
   narrowOverrideUnicodeRanges: [
     '\u2122', // ™ Trade Mark Sign
     '\u2139', // ℹ Information Source
@@ -96,10 +93,9 @@ If no config file is present, the defaults above are used.
 
 `md-fmt` recursively formats files ending in `.md` or `.markdown`.
 
-Create a `.mdformatignore` file to control what is skipped. It uses full
-`.gitignore` syntax (anchoring, negation with `!`, comments, any-depth matching),
-matched relative to each target root. If the file is present it **replaces** the
-built-in defaults; if it is absent, these defaults are used:
+Create a `.mdformatignore` file to control what is skipped.
+It uses full `.gitignore` syntax (anchoring, negation with `!`, comments, any-depth matching), matched relative to each target root.
+If the file is present it **replaces** the built-in defaults; if it is absent, these defaults are used:
 
 ```
 node_modules
@@ -110,8 +106,7 @@ build
 .cache
 ```
 
-Symlink cycles are detected (a directory is walked at most once by real path), and
-dangling symlinks are skipped.
+Symlink cycles are detected (a directory is walked at most once by real path), and dangling symlinks are skipped.
 
 ## Requirements
 

@@ -60,9 +60,8 @@ const DEFAULT_NARROW_OVERRIDE_RANGES = [
 ];
 
 /**
- * Build the double-width / narrow-override matchers from a width config object
- * (shape: { doubleWidthUnicodeRanges?, narrowOverrideUnicodeRanges? }). Missing
- * fields fall back to the built-in defaults.
+ * Build the double-width / narrow-override matchers from a width config object (shape: { doubleWidthUnicodeRanges?, narrowOverrideUnicodeRanges? }).
+ * Missing fields fall back to the built-in defaults.
  */
 function buildWidthMatchers(config = {}) {
   const doubleWidthUnicodeRanges = (
@@ -80,8 +79,7 @@ function buildWidthMatchers(config = {}) {
   };
 }
 
-// Lazily-built matchers from mdformat.config.js in cwd, so require()-ing this
-// module has no filesystem side effects. Cached after first use.
+// Lazily-built matchers from mdformat.config.js in cwd, so require()-ing this module has no filesystem side effects. Cached after first use.
 let defaultMatchers = null;
 function getDefaultMatchers() {
   if (!defaultMatchers) defaultMatchers = buildWidthMatchers(loadConfig());
@@ -123,11 +121,9 @@ function padCell(cell, targetWidth, align, matchers) {
 }
 
 /**
- * Find the [start, end) character ranges of fenced code blocks (``` or ~~~),
- * following CommonMark fence rules closely enough for table masking: a fence
- * opens on a line of 3+ backticks/tildes (indented ≤3 spaces) and closes on a
- * later line of the same character whose run is at least as long, with nothing
- * but whitespace after it. An unclosed fence runs to the end of the document.
+ * Find the [start, end) character ranges of fenced code blocks (``` or ~~~), following CommonMark fence rules closely enough for table masking:
+ * a fence opens on a line of 3+ backticks/tildes (indented ≤3 spaces) and closes on a later line of the same character whose run is at least as long, with nothing but whitespace after it.
+ * An unclosed fence runs to the end of the document.
  */
 function findCodeFenceRanges(text) {
   const ranges = [];
@@ -181,9 +177,8 @@ function detectTables(text) {
     'g',
   );
 
-  // Skip "tables" that live inside fenced code blocks — they are content, not
-  // tables to format. A table match always begins on a content line (which has
-  // a pipe), so a fence line can't start one; checking the start index suffices.
+  // Skip "tables" that live inside fenced code blocks — they are content, not tables to format.
+  // A table match always begins on a content line (which has a pipe), so a fence line can't start one; checking the start index suffices.
   const fences = findCodeFenceRanges(text);
   const inFence = (idx) => fences.some(([s, e]) => idx >= s && idx < e);
 
@@ -328,10 +323,9 @@ function formatMarkdownTables(content, options = {}) {
   const tables = detectTables(content);
   if (tables.length === 0) return content;
 
-  // Resolve width matchers once per document. Callers may inject a width config
-  // (options.widthConfig) or pre-built matchers (options.matchers); otherwise the
-  // lazily-loaded cwd config is used. Keeps the regex build out of the per-table
-  // loop and out of module load.
+  // Resolve width matchers once per document.
+  // Callers may inject a width config (options.widthConfig) or pre-built matchers (options.matchers); otherwise the lazily-loaded cwd config is used.
+  // Keeps the regex build out of the per-table loop and out of module load.
   const matchers =
     options.matchers ??
     (options.widthConfig

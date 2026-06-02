@@ -4,8 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { formatMarkdownTables, detectTables } = require('../src/tableFormatter');
 
-// Pass an explicit (empty → built-in defaults) width config so the tests are
-// deterministic and independent of any mdformat.config.js in the cwd.
+// Pass an explicit (empty → built-in defaults) width config so the tests are deterministic and independent of any mdformat.config.js in the cwd.
 const fmt = (input, opts = {}) =>
   formatMarkdownTables(input, { widthConfig: {}, ...opts });
 
@@ -50,8 +49,7 @@ test('returns content unchanged when there is no table', () => {
 });
 
 test('a custom widthConfig changes how cell width is measured', () => {
-  // '@@@' is 3 narrow chars by default (column min-width 3), but treating '@' as
-  // double-width makes it measure 6, widening the first column.
+  // '@@@' is 3 narrow chars by default (column min-width 3), but treating '@' as double-width makes it measure 6, widening the first column.
   const input = '| @@@ | b |\n|---|---|\n| x | y |\n';
   const normal = fmt(input);
   const wide = fmt(input, { widthConfig: { doubleWidthUnicodeRanges: ['@'] } });
