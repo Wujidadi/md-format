@@ -1,0 +1,12 @@
+# Source and build inputs — only dist/ plus the externalized prettier ship.
+src/**
+test-harness.js
+# Everything in node_modules is bundled by esbuild EXCEPT prettier (kept external
+# because Prettier v3 cannot be bundled — its dynamic parser loading breaks).
+node_modules/**
+!node_modules/prettier/**
+.gitignore
+.vscode/**
+**/*.map
+**/tsconfig.json
+.eslintrc*

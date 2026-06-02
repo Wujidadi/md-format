@@ -1,9 +1,13 @@
 # md-format
 
-A CLI tool to recursively format Markdown files.
-It runs [Prettier](https://prettier.io) for general Markdown formatting, then re-aligns tables using the [yzhang.markdown-all-in-one](https://github.com/yzhang-gh/vscode-markdown) table alignment algorithm
+Format Markdown files with [Prettier](https://prettier.io) for general formatting, then re-align tables using the [yzhang.markdown-all-in-one](https://github.com/yzhang-gh/vscode-markdown) table alignment algorithm
 — with correct CJK and Emoji character width handling (which Prettier's byte-based alignment gets wrong).
 Use `--tables-only` to skip Prettier and align tables alone.
+
+It ships in two forms that share the same formatting core:
+
+- a **CLI** (`md-fmt`) that recursively formats files — documented below;
+- a **VS Code extension** that formats the active document via **Format Document** (`Shift+Alt+F`) — see [`extension/`](extension/).
 
 ## Installation
 
@@ -107,6 +111,21 @@ build
 ```
 
 Symlink cycles are detected (a directory is walked at most once by real path), and dangling symlinks are skipped.
+
+## VS Code Extension
+
+The [`extension/`](extension/) folder is a VS Code formatter extension built on the same core, so it produces output identical to the CLI.
+Register it as your Markdown formatter and use **Format Document** (`Shift+Alt+F` / `Shift+Opt+F`) or **Format Document With…**.
+
+```sh
+cd extension
+npm install
+npm run compile     # bundle src/extension.js → dist/extension.js (esbuild)
+```
+
+Press **F5** from the repository root to launch an Extension Development Host, or run `npm run package` (in `extension/`) to build a `.vsix`.
+Settings mirror the CLI options (`mdFormat.tablesOnly`, `mdFormat.delimiterRowNoPadding`, `mdFormat.normalizeIndentation`, `mdFormat.tabSize`) plus `mdFormat.doubleWidthUnicodeRanges` / `mdFormat.narrowOverrideUnicodeRanges`; the extension also reads a workspace-root `mdformat.config.js` for width configuration.
+See [`extension/README.md`](extension/README.md) for details.
 
 ## Requirements
 

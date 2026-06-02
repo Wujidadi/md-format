@@ -3,8 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const prettier = require('prettier');
-const { formatMarkdownTables } = require('./tableFormatter');
+const { formatMarkdown } = require('./pipeline');
 const ignore = require('ignore');
 
 // ── Usage ────────────────────────────────────────────────────────────---------
@@ -22,16 +21,6 @@ Options:
   --normalize-indent   Enable normalizeIndentation (default: false)
   --tab-size <n>       Tab size for indentation normalization (default: 4)
 `;
-
-// ── Default Prettier options ──────────────────────────────────────────────────
-
-// Applied as the floor for every file so md-fmt behaves consistently regardless of where the target Markdown lives.
-// A target-local .prettierrc can override these.
-// `embeddedLanguageFormatting: 'off'` leaves all fenced code blocks untouched
-// — the only way to both preserve multi-line JSON arrays (e.g. "fields": ["*"]) and keep JS single quotes, since Prettier has no per-rule switch for embedded code.
-const DEFAULT_PRETTIER_OPTIONS = {
-  embeddedLanguageFormatting: 'off',
-};
 
 // ── Default ignore patterns ───────────────────────────────────────────────────
 
@@ -202,45 +191,18 @@ const preview = options.dryRun || options.check; // neither mode writes files
       continue;
     }
 
-    // ① Run Prettier first for general Markdown formatting, then ② re-align tables with CJK/Emoji-aware widths (Prettier's table widths are byte-based and break on full-width characters).
-    // --tables-only skips step ①.
-    let formatted = original;
-    if (!options.tablesOnly) {
-      // A target-local Prettier config may reference plugins/shared configs that aren't resolvable from here; don't let one bad config abort the whole run.
-      let prettierConfig = {};
-      try {
-        prettierConfig = (await prettier.resolveConfig(file)) || {};
-      } catch (err) {
-        console.error(
-          `warning: ignoring unresolvable Prettier config for ${file}: ${err.message}`,
-        );
-      }
-      try {
-        formatted = await prettier.format(original, {
-          ...DEFAULT_PRETTIER_OPTIONS,
-          ...prettierConfig,
-          parser: 'markdown',
-        });
-      } catch (err) {
-        // The resolved config may pull in a plugin we can't load;
-        // retry with our built-in defaults only, and if even that fails, leave it unformatted.
-        console.error(
-          `warning: Prettier failed for ${file} (${err.message}); retrying with built-in defaults`,
-        );
-        try {
-          formatted = await prettier.format(original, {
-            ...DEFAULT_PRETTIER_OPTIONS,
-            parser: 'markdown',
-          });
-        } catch (err2) {
-          console.error(
-            `warning: Prettier still failed for ${file} (${err2.message}); leaving content unformatted`,
-          );
-        }
-      }
-    }
+    // Run the shared "Prettier → CJK-aware table alignment" pipeline.
+    // The CLI passes no widthConfig, so tableFormatter falls back to its cwd-based default config (mdformat.config.js) — preserving the long-standing CLI behavior.
+    let formatted;
     try {
-      formatted = formatMarkdownTables(formatted, options);
+      formatted = await formatMarkdown(original, {
+        filePath: file,
+        tablesOnly: options.tablesOnly,
+        delimiterRowNoPadding: options.delimiterRowNoPadding,
+        normalizeIndentation: options.normalizeIndentation,
+        tabSize: options.tabSize,
+        onWarn: (msg) => console.error(`warning: ${msg}`),
+      });
     } catch (err) {
       errored++;
       console.error(`warning: failed to format ${file}: ${err.message}`);

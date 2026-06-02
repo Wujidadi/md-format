@@ -35,18 +35,20 @@ They lock the current correct alignment output (ASCII/CJK/alignment markers/idem
 
 ## Architecture
 
-Just two source files, with clearly separated responsibilities:
+The formatting core is shared between a CLI and a VS Code extension, with clearly separated responsibilities:
 
+- **`src/tableFormatter.js`** — table alignment logic, exporting `formatMarkdownTables`, `formatTable`, `detectTables`, and `buildWidthMatchers`.
+- **`src/pipeline.js`** — the shared, pure "Prettier → table alignment" pipeline, exporting `formatMarkdown(text, options)`. **No file IO, no `process.exit`.** Both the CLI and the extension call this so they produce identical output. Callers pass `filePath` (for `prettier.resolveConfig`), the formatting options, an optional `widthConfig`, and an `onWarn` callback (so warnings go to `console.error` for the CLI or an OutputChannel for the extension).
 - **`src/format.js`** — CLI entry point (`bin: md-fmt`). Responsible for:
   - parsing arguments
   - loading `.mdformatignore` rules via the `ignore` package (full `.gitignore` semantics; falls back to the bare-name `DEFAULT_IGNORE_PATTERNS` when the file is absent)
   - recursively collecting `.md`/`.markdown` files (skipping ignored paths, dangling symlinks, and symlink cycles)
-  - then running the "Prettier → table alignment" pipeline per file and writing back unless `--dry-run`/`--check`
-- **`src/tableFormatter.js`** — table alignment logic, exporting `formatMarkdownTables`, `formatTable`, and `detectTables`.
+  - calling `formatMarkdown` per file (passing no `widthConfig`, so `tableFormatter` uses its cwd-based default config) and writing back unless `--dry-run`/`--check`
+- **`extension/`** — the VS Code extension (separate manifest). `src/extension.js` registers a `DocumentFormattingEditProvider` for `markdown` that calls `formatMarkdown` and returns a whole-document `TextEdit`. esbuild bundles `src/extension.js` (inlining `../../src/pipeline.js` and node deps, `--external:vscode`) into `dist/extension.js`. The extension is **workspace-aware**: it never relies on `process.cwd()`, always passing an explicit `widthConfig` resolved per field from VS Code settings (`mdFormat.*UnicodeRanges`) > the workspace-root `mdformat.config.js` > built-in defaults.
 
-### Processing Pipeline (format.js)
+### Processing Pipeline (pipeline.js)
 
-Each file passes through, in order:
+Each document passes through, in order:
 
 1. **Prettier** for whole-document formatting. Options are layered as `{ ...DEFAULT_PRETTIER_OPTIONS, ...resolveConfig(file), parser: 'markdown' }`:
    `DEFAULT_PRETTIER_OPTIONS` (a built-in floor, currently `embeddedLanguageFormatting: 'off'`),

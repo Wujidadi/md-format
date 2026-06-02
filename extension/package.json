@@ -1,0 +1,89 @@
+{
+  "name": "md-format-vscode",
+  "displayName": "Markdown Formatter (CJK-aware tables)",
+  "description": "Format Markdown with Prettier plus CJK/Emoji-aware table alignment. Tables stay aligned by visual width (full-width = 2), which Prettier's byte-based alignment gets wrong.",
+  "version": "1.0.0",
+  "publisher": "wujidadi",
+  "license": "MIT",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Formatters"
+  ],
+  "keywords": [
+    "markdown",
+    "formatter",
+    "table",
+    "cjk",
+    "prettier"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wujidadi/md-format.git"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "Markdown Formatter (CJK-aware tables)",
+      "properties": {
+        "mdFormat.tablesOnly": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Skip Prettier and only align tables (surgical mode). Corresponds to the CLI's `--tables-only`."
+        },
+        "mdFormat.delimiterRowNoPadding": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Remove space padding around the delimiter row. Corresponds to `markdown.extension.tableFormatter.delimiterRowNoPadding`."
+        },
+        "mdFormat.normalizeIndentation": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Normalize table indentation to whole tab stops. Corresponds to `markdown.extension.tableFormatter.normalizeIndentation`."
+        },
+        "mdFormat.tabSize": {
+          "type": "number",
+          "default": 4,
+          "minimum": 1,
+          "markdownDescription": "Tab size used when `#mdFormat.normalizeIndentation#` is enabled."
+        },
+        "mdFormat.doubleWidthUnicodeRanges": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Unicode ranges (each entry a single char `\\uXXXX` or a range `\\uXXXX-\\uYYYY`) treated as double-width (visual width 2). When non-empty, **replaces** the workspace `mdformat.config.js` value and the built-in defaults for this field."
+        },
+        "mdFormat.narrowOverrideUnicodeRanges": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Unicode ranges that `\\p{Extended_Pictographic}` misjudges as wide but that actually render half-width (e.g. trademark, info source). When non-empty, **replaces** the workspace `mdformat.config.js` value and the built-in defaults for this field."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "esbuild src/extension.js --bundle --platform=node --format=cjs --external:vscode --external:prettier --outfile=dist/extension.js",
+    "watch": "npm run compile -- --sourcemap --watch",
+    "vscode:prepublish": "npm run compile -- --minify",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "dependencies": {
+    "prettier": "^3.8.3"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0"
+  }
+}
