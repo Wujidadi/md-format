@@ -2,63 +2,75 @@
 
 > Using Font: Sarasa Mono Slab TC
 
-| Unicode | Character | Should be in `doubleWidthUnicodeRanges` | Should be in `narrowOverrideUnicodeRanges` |
-| ------- | --------- | --------------------------------------- | ------------------------------------------ |
-| \u0031  | 1         | False                                   | False                                      |
-| \u2014  | —        | True                                    | False                                      |
-| \u2015  | ―        | True                                    | False                                      |
-| \u2016  | ‖         | False                                   | False                                      |
-| \u2017  | ‗         | False                                   | False                                      |
-| \u2018  | ‘         | False                                   | False                                      |
-| \u2019  | ’         | False                                   | False                                      |
-| \u201a  | ‚         | False                                   | False                                      |
-| \u201b  | ‛         | False                                   | False                                      |
-| \u201c  | “         | False                                   | False                                      |
-| \u201d  | ”         | False                                   | False                                      |
-| \u201e  | „         | False                                   | False                                      |
-| \u201f  | ‟         | False                                   | False                                      |
-| \u2025  | ‥        | True                                    | False                                      |
-| \u2026  | …        | True                                    | False                                      |
-| \u2027  | ‧         | False                                   | False                                      |
-| \u2030  | ‰        | True                                    | False                                      |
-| \u2032  | ′         | False                                   | False                                      |
-| \u2033  | ″         | False                                   | False                                      |
-| \u203b  | ※        | True                                    | False                                      |
-| \u2103  | ℃         | False                                   | False                                      |
-| \u2105  | ℅         | False                                   | False                                      |
-| \u2109  | ℉         | False                                   | False                                      |
-| \u2116  | №         | False                                   | False                                      |
-| \u2121  | ℡         | False                                   | False                                      |
-| \u2122  | ™         | False                                   | True                                       |
-| \u2122  | ™         | False                                   | True                                       |
-| \u2139  | ℹ         | False                                   | True                                       |
-| \u2191  | ↑        | True                                    | False                                      |
-| \u2192  | →        | True                                    | False                                      |
-| \u2193  | ↓        | True                                    | False                                      |
-| \u2194  | ↔        | False                                   | False                                      |
-| \u2195  | ↕        | False                                   | False                                      |
-| \u2196  | ↖        | False                                   | False                                      |
-| \u2197  | ↗        | False                                   | False                                      |
-| \u2198  | ↘        | False                                   | False                                      |
-| \u2199  | ↙        | False                                   | False                                      |
-| \u21a9  | ↩        | False                                   | False                                      |
-| \u21aa  | ↪        | False                                   | False                                      |
-| \u231a  | ⌚        | False                                   | False                                      |
-| \u231b  | ⌛        | False                                   | False                                      |
-| \u2328  | ⌨        | False                                   | False                                      |
-| \u23cf  | ⏏        | False                                   | False                                      |
-| \u25a0  | ■        | False                                   | False                                      |
-| \u25b2  | ▲        | True                                    | False                                      |
-| \u25b3  | △        | True                                    | False                                      |
-| \u25cb  | ○        | True                                    | False                                      |
-| \u25cf  | ●        | True                                    | False                                      |
-| \u2713  | ✓        | True                                    | False                                      |
-| \u2717  | ✗        | True                                    | False                                      |
-| \u2e80  | ⺀        | True                                    | False                                      |
-| \u2fdf  | ⼰        | True                                    | False                                      |
-| \u6587  | 文        | True                                    | False                                      |
-| \ufaff  | 豈        | True                                    | False                                      |
-| \ufe4f  | ﹏        | True                                    | False                                      |
-| \ufe50  | ﹐        | True                                    | False                                      |
-| \uff61  | ｡         | False                                   | False                                      |
-| \uffee  | ￮         | False                                   | False                                      |
+| Unicode | Character |
+| ------- | --------- |
+| \u0031  | 1         |
+| \u2014  | —        |
+| \u2015  | ―        |
+| \u2016  | ‖         |
+| \u2017  | ‗         |
+| \u2018  | ‘         |
+| \u2019  | ’         |
+| \u201a  | ‚         |
+| \u201b  | ‛         |
+| \u201c  | “         |
+| \u201d  | ”         |
+| \u201e  | „         |
+| \u201f  | ‟         |
+| \u2025  | ‥        |
+| \u2026  | …        |
+| \u2027  | ‧         |
+| \u2030  | ‰        |
+| \u2032  | ′         |
+| \u2033  | ″         |
+| \u203b  | ※        |
+| \u2103  | ℃         |
+| \u2105  | ℅         |
+| \u2109  | ℉         |
+| \u2116  | №         |
+| \u2121  | ℡         |
+| \u2122  | ™         |
+| \u2122  | ™         |
+| \u2139  | ℹ         |
+| \u2191  | ↑        |
+| \u2192  | →        |
+| \u2193  | ↓        |
+| \u2194  | ↔        |
+| \u2195  | ↕        |
+| \u2196  | ↖        |
+| \u2197  | ↗        |
+| \u2198  | ↘        |
+| \u2199  | ↙        |
+| \u21a9  | ↩        |
+| \u21aa  | ↪        |
+| \u231a  | ⌚        |
+| \u231b  | ⌛        |
+| \u2328  | ⌨        |
+| \u23cf  | ⏏        |
+| \u25a0  | ■        |
+| \u25b2  | ▲        |
+| \u25b3  | △        |
+| \u25cb  | ○        |
+| \u25cf  | ●        |
+| \u2713  | ✓        |
+| \u2717  | ✗        |
+| \u2e80  | ⺀        |
+| \u2fdf  | ⼰        |
+| \u6587  | 文        |
+| \ufaff  | 豈        |
+| \ufe4f  | ﹏        |
+| \ufe50  | ﹐        |
+| \uff61  | ｡         |
+| \uffee  | ￮         |
+| \u1F7E0 | 🟠        |
+| \u1F7E1 | 🟡        |
+| \u1F7E2 | 🟢        |
+| \u1F7E3 | 🟣        |
+| \u1F7E4 | 🟤        |
+| \u1F7E5 | 🟥        |
+| \u1F7E6 | 🟦        |
+| \u1F7E7 | 🟧        |
+| \u1F7E8 | 🟨        |
+| \u1F7E9 | 🟩        |
+| \u1F7EA | 🟪        |
+| \u1F7EB | 🟫        |
