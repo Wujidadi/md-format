@@ -94,11 +94,15 @@ function activate(context) {
     },
   };
 
+  // Match by file path, not by language id.
+  // AI-guidance files (*.prompt.md, *.instructions.md, *.chatmode.md, *.agent.md, SKILL.md, .claude/rules/*.md, etc.) are Markdown but get assigned their own language ids by Copilot/Claude extensions, so a `{ language: 'markdown' }` selector misses them.
+  // Those ids are extension- and version-dependent, so a glob over `.md`/`.markdown` covers every current and future variant since they all keep the Markdown extension.
+  const selector = [
+    { language: 'markdown' }, // markdown-language docs, including untitled/unsaved
+    { scheme: 'file', pattern: '**/*.{md,markdown}' }, // any .md file regardless of its language id
+  ];
   context.subscriptions.push(
-    vscode.languages.registerDocumentFormattingEditProvider(
-      { language: 'markdown', scheme: '*' },
-      provider,
-    ),
+    vscode.languages.registerDocumentFormattingEditProvider(selector, provider),
   );
 }
 

@@ -24,6 +24,18 @@ To set it as the default formatter for Markdown, add to your settings:
 }
 ```
 
+### AI-guidance Markdown variants
+
+Copilot and Claude tooling assign their own language modes to AI-guidance files such as prompt files (`*.prompt.md`), instructions files (`*.instructions.md`), chat modes (`*.chatmode.md`), custom agents (`*.agent.md`), and skills (`SKILL.md`), so VS Code no longer treats them as plain Markdown.
+This formatter matches files by path (any `.md` / `.markdown` file), not by language id, so it is offered on those files too — including ones under `.github/` and `.claude/`.
+To make it the default formatter there as well, add a language-scoped entry per mode you use; the language ids are assigned by your installed extensions, so confirm each one via the language indicator in the status bar:
+
+```json
+"[prompt]":       { "editor.defaultFormatter": "wujidadi.md-format-vscode" },
+"[instructions]": { "editor.defaultFormatter": "wujidadi.md-format-vscode" },
+"[chatmode]":     { "editor.defaultFormatter": "wujidadi.md-format-vscode" }
+```
+
 ## Settings
 
 | Setting                                | Default | Description                                                                  |
