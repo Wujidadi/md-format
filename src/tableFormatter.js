@@ -348,5 +348,6 @@ module.exports = {
   formatMarkdownTables,
   formatTable,
   detectTables,
+  findCodeFenceRanges,
   buildWidthMatchers,
 };

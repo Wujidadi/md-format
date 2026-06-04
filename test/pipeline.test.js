@@ -40,6 +40,24 @@ test('tablesOnly skips Prettier formatting', async () => {
   assert.match(out, /^#  t\n/, 'heading must be left untouched in tablesOnly mode');
 });
 
+test('preserves abbreviation definitions (`*[ABBR]: …`) and is idempotent', async () => {
+  const input =
+    '# t\n\n*[HTML]: HyperText Markup Language\n*[CSS]: Cascading Style Sheets\n\nHTML and CSS.\n';
+  const once = await formatMarkdown(input, { filePath: 'x.md', widthConfig: {} });
+  // The literal leading `*` must survive (Prettier would otherwise escape it to `\*` or normalize it to `_`).
+  assert.match(once, /^\*\[HTML\]: HyperText Markup Language$/m);
+  assert.match(once, /^\*\[CSS\]: Cascading Style Sheets$/m);
+  assert.ok(!/[\\_]\[HTML\]:/.test(once), 'must not produce \\*[HTML]: or _[HTML]:');
+  const twice = await formatMarkdown(once, { filePath: 'x.md', widthConfig: {} });
+  assert.strictEqual(twice, once, 'pipeline should be idempotent');
+});
+
+test('does not touch abbreviation-like lines inside fenced code blocks', async () => {
+  const input = '# t\n\n```markdown\n*[XYZ]: demo\n```\n';
+  const out = await formatMarkdown(input, { filePath: 'x.md', widthConfig: {} });
+  assert.match(out, /```markdown\n\*\[XYZ\]: demo\n```/);
+});
+
 test('onWarn receives messages instead of throwing on bad Prettier config', async () => {
   // A non-existent file path still resolves config gracefully; just assert it returns a string.
   const warnings = [];
