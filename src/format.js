@@ -20,6 +20,7 @@ Options:
   --delimiter-no-pad   Enable delimiterRowNoPadding (default: false)
   --normalize-indent   Enable normalizeIndentation (default: false)
   --tab-size <n>       Tab size for indentation normalization (default: 4)
+  --hr-length <n>      Length of standalone thematic breaks (<hr>, e.g. "---"); min 3 (default: 3)
 `;
 
 // ── Default ignore patterns ───────────────────────────────────────────────────
@@ -68,6 +69,7 @@ const options = {
   delimiterRowNoPadding: false,
   normalizeIndentation: false,
   tabSize: 4,
+  hrLength: 3,
 };
 const targets = [];
 
@@ -106,6 +108,18 @@ for (let i = 0; i < args.length; i++) {
       options.tabSize = n;
       break;
     }
+    case '--hr-length': {
+      const raw = args[++i];
+      const n = parseInt(raw, 10);
+      if (Number.isNaN(n) || n < 3) {
+        console.error(
+          `error: --hr-length requires an integer >= 3 (got ${raw ?? '<nothing>'})`,
+        );
+        process.exit(1);
+      }
+      options.hrLength = n;
+      break;
+    }
     default:
       if (args[i].startsWith('-')) {
         console.error(`error: unknown option: ${args[i]}`);
@@ -118,7 +132,7 @@ for (let i = 0; i < args.length; i++) {
 
 if (targets.length === 0) {
   console.error(
-    'Usage: md-fmt [--dry-run] [--check] [--tables-only] [--delimiter-no-pad] [--normalize-indent] [--tab-size <n>] <path> [<path> ...]',
+    'Usage: md-fmt [--dry-run] [--check] [--tables-only] [--delimiter-no-pad] [--normalize-indent] [--tab-size <n>] [--hr-length <n>] <path> [<path> ...]',
   );
   process.exit(1);
 }
@@ -201,6 +215,7 @@ const preview = options.dryRun || options.check; // neither mode writes files
         delimiterRowNoPadding: options.delimiterRowNoPadding,
         normalizeIndentation: options.normalizeIndentation,
         tabSize: options.tabSize,
+        hrLength: options.hrLength,
         onWarn: (msg) => console.error(`warning: ${msg}`),
       });
     } catch (err) {

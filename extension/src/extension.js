@@ -73,6 +73,7 @@ function activate(context) {
           delimiterRowNoPadding: cfg.get('delimiterRowNoPadding'),
           normalizeIndentation: cfg.get('normalizeIndentation'),
           tabSize: cfg.get('tabSize'),
+          hrLength: cfg.get('hrLength'),
           widthConfig: resolveWidthConfig(document, channel),
           onWarn: (msg) => channel.appendLine(msg),
         });

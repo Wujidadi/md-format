@@ -58,6 +58,54 @@ test('does not touch abbreviation-like lines inside fenced code blocks', async (
   assert.match(out, /```markdown\n\*\[XYZ\]: demo\n```/);
 });
 
+test('hrLength expands a standalone thematic break beyond Prettier\'s hardcoded 3 characters', async () => {
+  const input = 'a\n\n-------\n\nb\n';
+  const out = await formatMarkdown(input, {
+    filePath: 'x.md',
+    widthConfig: {},
+    hrLength: 7,
+  });
+  assert.strictEqual(out, 'a\n\n-------\n\nb\n');
+});
+
+test('hrLength defaults to 3, matching Prettier\'s own thematic break length', async () => {
+  const input = 'a\n\n-------\n\nb\n';
+  const out = await formatMarkdown(input, { filePath: 'x.md', widthConfig: {} });
+  assert.strictEqual(out, 'a\n\n---\n\nb\n');
+});
+
+test('hrLength does not touch a setext heading underline (only a genuine thematic break)', async () => {
+  // "Title\n---" is a setext H2, not an <hr>; Prettier normalizes it to an ATX heading either way.
+  const input = 'Title\n---\n\nbody\n';
+  const out = await formatMarkdown(input, {
+    filePath: 'x.md',
+    widthConfig: {},
+    hrLength: 7,
+  });
+  assert.strictEqual(out, '## Title\n\nbody\n');
+});
+
+test('hrLength does not touch a thematic break inside a fenced code block', async () => {
+  const input = '# t\n\n```\n---\n```\n';
+  const out = await formatMarkdown(input, {
+    filePath: 'x.md',
+    widthConfig: {},
+    hrLength: 7,
+  });
+  assert.match(out, /```\n---\n```/);
+});
+
+test('hrLength is a no-op in tablesOnly mode (Prettier does not run)', async () => {
+  const input = 'a\n\n-------\n\nb\n';
+  const out = await formatMarkdown(input, {
+    filePath: 'x.md',
+    widthConfig: {},
+    tablesOnly: true,
+    hrLength: 3,
+  });
+  assert.strictEqual(out, input);
+});
+
 test('onWarn receives messages instead of throwing on bad Prettier config', async () => {
   // A non-existent file path still resolves config gracefully; just assert it returns a string.
   const warnings = [];

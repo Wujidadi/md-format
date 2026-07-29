@@ -28,15 +28,16 @@ md-fmt [options] <directory|file> [<directory|file> ...]
 
 ### Options
 
-| Option               | Description                                         | Default |
-| -------------------- | --------------------------------------------------- | ------- |
-| `-h, --help`         | Show help message                                   | —      |
-| `-d, --dry-run`      | Print what would be changed without writing         | `false` |
-| `--check`            | Exit non-zero if any file needs formatting (for CI) | `false` |
-| `--tables-only`      | Only align tables; skip Prettier formatting         | `false` |
-| `--delimiter-no-pad` | Enable `delimiterRowNoPadding`                      | `false` |
-| `--normalize-indent` | Enable `normalizeIndentation`                       | `false` |
-| `--tab-size <n>`     | Tab size for indentation normalization              | `4`     |
+| Option               | Description                                                      | Default |
+| -------------------- | ---------------------------------------------------------------- | ------- |
+| `-h, --help`         | Show help message                                                | —      |
+| `-d, --dry-run`      | Print what would be changed without writing                      | `false` |
+| `--check`            | Exit non-zero if any file needs formatting (for CI)              | `false` |
+| `--tables-only`      | Only align tables; skip Prettier formatting                      | `false` |
+| `--delimiter-no-pad` | Enable `delimiterRowNoPadding`                                   | `false` |
+| `--normalize-indent` | Enable `normalizeIndentation`                                    | `false` |
+| `--tab-size <n>`     | Tab size for indentation normalization                           | `4`     |
+| `--hr-length <n>`    | Length of standalone thematic breaks (`<hr>`, e.g. `---`); min 3 | `3`     |
 
 ### Examples
 
@@ -124,7 +125,7 @@ npm run compile     # bundle src/extension.js → dist/extension.js (esbuild)
 ```
 
 Press **F5** from the repository root to launch an Extension Development Host, or run `npm run package` (in `extension/`) to build a `.vsix`.
-Settings mirror the CLI options (`mdFormat.tablesOnly`, `mdFormat.delimiterRowNoPadding`, `mdFormat.normalizeIndentation`, `mdFormat.tabSize`) plus `mdFormat.doubleWidthUnicodeRanges` / `mdFormat.narrowOverrideUnicodeRanges`; the extension also reads a workspace-root `mdformat.config.js` for width configuration.
+Settings mirror the CLI options (`mdFormat.tablesOnly`, `mdFormat.delimiterRowNoPadding`, `mdFormat.normalizeIndentation`, `mdFormat.tabSize`, `mdFormat.hrLength`) plus `mdFormat.doubleWidthUnicodeRanges` / `mdFormat.narrowOverrideUnicodeRanges`; the extension also reads a workspace-root `mdformat.config.js` for width configuration.
 See [`extension/README.md`](extension/README.md) for details.
 
 ## Requirements

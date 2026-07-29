@@ -52,6 +52,12 @@
           "minimum": 1,
           "markdownDescription": "Tab size used when `#mdFormat.normalizeIndentation#` is enabled."
         },
+        "mdFormat.hrLength": {
+          "type": "number",
+          "default": 3,
+          "minimum": 3,
+          "markdownDescription": "Length of standalone thematic breaks (`<hr>`, e.g. `---`). Only applied when Prettier runs (ignored when `#mdFormat.tablesOnly#` is enabled). Corresponds to the CLI's `--hr-length`."
+        },
         "mdFormat.doubleWidthUnicodeRanges": {
           "type": "array",
           "items": {

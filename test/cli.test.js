@@ -91,6 +91,12 @@ test('rejects an invalid --tab-size', () => {
   assert.match(res.stderr, /--tab-size requires a positive integer/);
 });
 
+test('rejects an --hr-length below the minimum of 3', () => {
+  const res = run(['--hr-length', '2', '.']);
+  assert.strictEqual(res.status, 1);
+  assert.match(res.stderr, /--hr-length requires an integer >= 3/);
+});
+
 test('does not recurse forever on a symlink cycle', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdfmt-'));
   try {

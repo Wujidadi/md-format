@@ -60,6 +60,35 @@ function unmaskAbbreviations(text, placeholders) {
   return text.replace(ABBR_PLACEHOLDER, (m, i) => placeholders[Number(i)] ?? m);
 }
 
+// ── Thematic break (`<hr>`) length ────────────────────────────────────────────
+
+// Prettier's markdown printer hardcodes every thematic break to exactly 3 characters
+// (`---`, or `***` when adjacent to a list, to disambiguate from bullet markers) — this is not
+// exposed as a Prettier option. Since Prettier always separates block-level nodes with exactly
+// one blank line and never emits a bare "---"/"***" from anywhere but a genuine thematicBreak node
+// (setext headings are always normalized to ATX `#` headings), any standalone "---"/"***" line
+// surrounded by blank lines (or document boundaries) in Prettier's output is safe to re-expand.
+function expandThematicBreaks(text, length) {
+  if (length === 3) return text;
+  const fenceRanges = findCodeFenceRanges(text);
+  const inFence = (pos) => fenceRanges.some(([s, e]) => pos >= s && pos < e);
+
+  const lines = text.split('\n');
+  let offset = 0;
+  const result = lines.map((line, i) => {
+    const lineStart = offset;
+    offset += line.length + 1; // account for the '\n' separator
+    const isBlockBoundary =
+      (i === 0 || lines[i - 1] === '') &&
+      (i === lines.length - 1 || lines[i + 1] === '');
+    if ((line === '---' || line === '***') && isBlockBoundary && !inFence(lineStart)) {
+      return line[0].repeat(length);
+    }
+    return line;
+  });
+  return result.join('\n');
+}
+
 // ── Default Prettier options ──────────────────────────────────────────────────
 
 // Applied as the floor for every document so formatting behaves consistently regardless of where the target Markdown lives.
@@ -90,6 +119,7 @@ const DEFAULT_PRETTIER_OPTIONS = {
  * @param {boolean} [options.delimiterRowNoPadding=false]
  * @param {boolean} [options.normalizeIndentation=false]
  * @param {number}  [options.tabSize=4]
+ * @param {number}  [options.hrLength=3] - length of standalone thematic breaks (`<hr>`, e.g. `---`); only applied when Prettier runs (skipped when tablesOnly)
  * @param {object}  [options.widthConfig] - width config injected explicitly (shape: { doubleWidthUnicodeRanges?, narrowOverrideUnicodeRanges? }). When omitted, tableFormatter falls back to its cwd-based default config.
  * @param {(message: string) => void} [options.onWarn] - called with a human-readable warning instead of writing to console
  * @returns {Promise<string>} the formatted Markdown
@@ -101,6 +131,7 @@ async function formatMarkdown(text, options = {}) {
     delimiterRowNoPadding = false,
     normalizeIndentation = false,
     tabSize = 4,
+    hrLength = 3,
     widthConfig,
     onWarn = () => {},
   } = options;
@@ -146,6 +177,7 @@ async function formatMarkdown(text, options = {}) {
     }
 
     formatted = unmaskAbbreviations(formatted, placeholders);
+    formatted = expandThematicBreaks(formatted, hrLength);
   }
 
   // ② Table alignment overrides the tables produced by Prettier, using CJK visual width.

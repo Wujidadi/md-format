@@ -44,6 +44,7 @@ To make it the default formatter there as well, add a language-scoped entry per 
 | `mdFormat.delimiterRowNoPadding`       | `false` | Remove space padding around the delimiter row.                               |
 | `mdFormat.normalizeIndentation`        | `false` | Normalize table indentation to whole tab stops.                              |
 | `mdFormat.tabSize`                     | `4`     | Tab size used when normalizing indentation.                                  |
+| `mdFormat.hrLength`                    | `3`     | Length of standalone thematic breaks (`<hr>`, e.g. `---`).                   |
 | `mdFormat.doubleWidthUnicodeRanges`    | `[]`    | Override the set of characters treated as double-width.                      |
 | `mdFormat.narrowOverrideUnicodeRanges` | `[]`    | Override the set of pictographic characters that actually render half-width. |
 
