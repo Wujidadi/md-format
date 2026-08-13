@@ -28,16 +28,17 @@ md-fmt [options] <directory|file> [<directory|file> ...]
 
 ### Options
 
-| Option               | Description                                                      | Default |
-| -------------------- | ---------------------------------------------------------------- | ------- |
-| `-h, --help`         | Show help message                                                | —      |
-| `-d, --dry-run`      | Print what would be changed without writing                      | `false` |
-| `--check`            | Exit non-zero if any file needs formatting (for CI)              | `false` |
-| `--tables-only`      | Only align tables; skip Prettier formatting                      | `false` |
-| `--delimiter-no-pad` | Enable `delimiterRowNoPadding`                                   | `false` |
-| `--normalize-indent` | Enable `normalizeIndentation`                                    | `false` |
-| `--tab-size <n>`     | Tab size for indentation normalization                           | `4`     |
-| `--hr-length <n>`    | Length of standalone thematic breaks (`<hr>`, e.g. `---`); min 3 | `3`     |
+| Option               | Description                                                       | Default |
+| -------------------- | ----------------------------------------------------------------- | ------- |
+| `-h, --help`         | Show help message                                                 | —      |
+| `-d, --dry-run`      | Print what would be changed without writing                       | `false` |
+| `--check`            | Exit non-zero if any file needs formatting (for CI)               | `false` |
+| `--tables-only`      | Only align tables; skip Prettier formatting                       | `false` |
+| `--delimiter-no-pad` | Enable `delimiterRowNoPadding`                                    | `false` |
+| `--normalize-indent` | Enable `normalizeIndentation`                                     | `false` |
+| `--tab-size <n>`     | Tab size for indentation normalization                            | `4`     |
+| `--hr-length <n>`    | Length of standalone thematic breaks (`<hr>`, e.g. `---`); min 3  | `3`     |
+| `--ignore-path <f>`  | Extra `.mdformatignore`-style rules, applied to every target root | —      |
 
 ### Examples
 
@@ -99,17 +100,36 @@ If no config file is present, the defaults above are used.
 `md-fmt` recursively formats files ending in `.md` or `.markdown`.
 
 Create a `.mdformatignore` file to control what is skipped.
-It uses full `.gitignore` syntax (anchoring, negation with `!`, comments, any-depth matching), matched relative to each target root.
-If the file is present it **replaces** the built-in defaults; if it is absent, these defaults are used:
+It uses full `.gitignore` syntax (anchoring, negation with `!`, comments, any-depth matching) and behaves like `.gitignore` in every respect:
+place one in any directory and its rules govern that directory and everything below it, relative to where the file sits.
+Nothing depends on the directory `md-fmt` happens to run from.
 
+Rules apply in layers, from broad to narrow, and the innermost match wins:
+
+1. the built-in defaults, always active:
+
+   ```
+   node_modules
+   vendor
+   .git
+   dist
+   build
+   .cache
+   ```
+
+2. the file given by `--ignore-path <file>`, if any, matched relative to each target root — for a shared or global rule set;
+3. every `.mdformatignore` found along the way, matched relative to its own directory.
+
+A `.mdformatignore` **adds to** the defaults rather than replacing them, so a negation is what brings one back:
+
+```gitignore
+!node_modules    # do format the Markdown shipped inside node_modules
+CHANGELOG.md     # never touch the changelog
+docs/generated/  # trailing slash: directories only
 ```
-node_modules
-vendor
-.git
-dist
-build
-.cache
-```
+
+A path named directly on the command line is always formatted, whatever the rules say —
+`md-fmt ./CHANGELOG.md` is an explicit instruction, and it is the escape hatch for formatting an otherwise excluded file.
 
 Symlink cycles are detected (a directory is walked at most once by real path), and dangling symlinks are skipped.
 

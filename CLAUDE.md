@@ -41,7 +41,7 @@ The formatting core is shared between a CLI and a VS Code extension, with clearl
 - **`src/pipeline.js`** — the shared, pure "Prettier → table alignment" pipeline, exporting `formatMarkdown(text, options)`. **No file IO, no `process.exit`.** Both the CLI and the extension call this so they produce identical output. Callers pass `filePath` (for `prettier.resolveConfig`), the formatting options, an optional `widthConfig`, and an `onWarn` callback (so warnings go to `console.error` for the CLI or an OutputChannel for the extension).
 - **`src/format.js`** — CLI entry point (`bin: md-fmt`). Responsible for:
   - parsing arguments
-  - loading `.mdformatignore` rules via the `ignore` package (full `.gitignore` semantics; falls back to the bare-name `DEFAULT_IGNORE_PATTERNS` when the file is absent)
+  - resolving ignore rules via the `ignore` package (full `.gitignore` semantics), stacked in layers as the walk descends — see below
   - recursively collecting `.md`/`.markdown` files (skipping ignored paths, dangling symlinks, and symlink cycles)
   - calling `formatMarkdown` per file (passing no `widthConfig`, so `tableFormatter` uses its cwd-based default config) and writing back unless `--dry-run`/`--check`
 - **`extension/`** — the VS Code extension (separate manifest). `src/extension.js` registers a `DocumentFormattingEditProvider` for `markdown` that calls `formatMarkdown` and returns a whole-document `TextEdit`. esbuild bundles `src/extension.js` (inlining `../../src/pipeline.js` and node deps, `--external:vscode`) into `dist/extension.js`. The extension is **workspace-aware**: it never relies on `process.cwd()`, always passing an explicit `widthConfig` resolved per field from VS Code settings (`mdFormat.*UnicodeRanges`) > the workspace-root `mdformat.config.js` > built-in defaults.
@@ -93,6 +93,23 @@ The CLI relies on that cwd default; tests inject `widthConfig` so they are deter
 When adjusting character-width determination, edit `mdformat.config.js` (override `doubleWidthUnicodeRanges` and `narrowOverrideUnicodeRanges`) rather than the source defaults directly.
 A missing or malformed config silently falls back to the built-in defaults.
 
+### Ignore Rules (format.js)
+
+Modelled directly on `.gitignore`, so nothing depends on `process.cwd()`.
+
+A **layer** (`makeLayer`) pairs one `ignore()` matcher with the directory its patterns are relative to.
+Each walk starts with a root layer holding `DEFAULT_IGNORE_PATTERNS` (plus the `--ignore-path` file, when given), anchored at the target root;
+`walkDir` then appends a layer for every `.mdformatignore` it meets on the way down.
+Rules declared for the same directory are **merged into one matcher** (`mergeLayer`) rather than stacked, because only the `ignore` package's own last-match-wins ordering can resolve them — that is what makes `!node_modules` in a target's own `.mdformatignore` undo a built-in default across the whole subtree.
+
+`classify` evaluates the layers outermost-first and takes the last decisive verdict, so a nested file's negation re-includes what an outer layer excluded.
+It uses `ig.test()` rather than `ig.ignores()` because only the former distinguishes "matched a negation" from "did not match".
+Its `inherited` argument carries the pattern by which a layer matched an ancestor directory that was re-included anyway:
+the `ignore` package extends a directory pattern to cover everything beneath it, but the walk already prunes at excluded directories, so honouring that coverage would re-exclude a subtree git considers included.
+Verified against `git check-ignore`.
+
+A target named on the command line is never tested against the rules — an explicit path is an explicit intent, and it is the escape hatch for formatting an otherwise excluded file.
+
 ## CLI Options
 
 Mirroring the VS Code extension's setting names:
@@ -103,6 +120,7 @@ Mirroring the VS Code extension's setting names:
 - `--delimiter-no-pad`: corresponds to `markdown.extension.tableFormatter.delimiterRowNoPadding`.
 - `--normalize-indent`: corresponds to `markdown.extension.tableFormatter.normalizeIndentation`, paired with `--tab-size <n>` (default 4).
 - `--hr-length <n>`: length of standalone thematic breaks (`<hr>`, e.g. `---`); minimum 3 (default 3). Only applied when Prettier runs (skipped with `--tables-only`), since Prettier's markdown printer hardcodes every thematic break to 3 characters and this is not exposed as a Prettier option.
+- `--ignore-path <file>`: an extra `.mdformatignore`-style rule set, layered above the built-in defaults and below any `.mdformatignore`. Its patterns are anchored at each target root, not at the file that declares them, so one shared rule set can be reused across unrelated targets. A missing file is a hard error.
 
 ## Git Commits
 
