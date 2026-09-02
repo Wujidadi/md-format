@@ -60,6 +60,9 @@ Each document passes through, in order:
    - Immediately after Prettier runs, `expandThematicBreaks` re-expands standalone thematic breaks (`<hr>`, e.g. `---`) to `hrLength` characters.
      Prettier's markdown printer hardcodes every thematic break to exactly 3 characters (`---`, or `***` next to a list) with no option to configure it, so this is a necessary post-processing fix-up, not optional cleanup.
      It only touches a line that is exactly `---`/`***` and is surrounded by blank lines or document boundaries (and not inside a fenced code block, via `findCodeFenceRanges`) — safe because Prettier always separates block-level nodes with exactly one blank line and always normalizes setext headings to ATX `#` headings, so no bare `---`/`***` line in Prettier's output can be anything other than a genuine thematic break. Skipped when `--tables-only` (Prettier didn't run, so there is nothing of its own to fix up).
+   - Then `rejoinLintNextLineComments` removes the blank line Prettier inserts after a `<!-- markdownlint-disable-next-line … -->` comment.
+     Prettier parses the comment as its own HTML block and separates it from the next block with a blank line, so the suppression would land on the blank line and silently stop working (e.g. the HackMD `###### tags:` idiom that needs MD001 suppressed).
+     Lines inside fenced code blocks are left alone. Skipped when `--tables-only` for the same reason as above.
 2. **Table alignment** (`formatMarkdownTables`) overrides the tables produced by Prettier, using CJK visual width instead.
 
 **The order must not be reversed**:

@@ -58,6 +58,21 @@ test('does not touch abbreviation-like lines inside fenced code blocks', async (
   assert.match(out, /```markdown\n\*\[XYZ\]: demo\n```/);
 });
 
+test('keeps a markdownlint disable-next-line comment glued to the line it suppresses, idempotently', async () => {
+  const input =
+    '# t\n\n<!-- markdownlint-disable-next-line MD001 -->\n###### tags: `a`\n\n<!-- markdownlint-disable-next-line MD013 -->\nsome text\n';
+  const out = await formatMarkdown(input, { filePath: 'x.md', widthConfig: {} });
+  assert.strictEqual(out, input);
+  const again = await formatMarkdown(out, { filePath: 'x.md', widthConfig: {} });
+  assert.strictEqual(again, out);
+});
+
+test('does not touch a markdownlint disable-next-line comment inside a fenced code block', async () => {
+  const input = '# t\n\n```markdown\n<!-- markdownlint-disable-next-line MD001 -->\n\n###### x\n```\n';
+  const out = await formatMarkdown(input, { filePath: 'x.md', widthConfig: {} });
+  assert.strictEqual(out, input);
+});
+
 test('hrLength expands a standalone thematic break beyond Prettier\'s hardcoded 3 characters', async () => {
   const input = 'a\n\n-------\n\nb\n';
   const out = await formatMarkdown(input, {

@@ -89,6 +89,40 @@ function expandThematicBreaks(text, length) {
   return result.join('\n');
 }
 
+// ── markdownlint `disable-next-line` comments ─────────────────────────────────
+
+// `<!-- markdownlint-disable-next-line … -->` only suppresses the line immediately below it.
+// Prettier parses the comment as its own HTML block and separates it from the next block with
+// a blank line, so the suppression would land on that blank line and silently stop working.
+const LINT_NEXT_LINE_COMMENT = /^\s*<!--\s*markdownlint-disable-next-line\b.*-->\s*$/;
+
+function rejoinLintNextLineComments(text) {
+  if (!text.includes('markdownlint-disable-next-line')) return text;
+  const fenceRanges = findCodeFenceRanges(text);
+  const inFence = (pos) => fenceRanges.some(([s, e]) => pos >= s && pos < e);
+
+  const lines = text.split('\n');
+  const result = [];
+  let offset = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineStart = offset;
+    offset += line.length + 1; // account for the '\n' separator
+    result.push(line);
+    if (
+      LINT_NEXT_LINE_COMMENT.test(line) &&
+      !inFence(lineStart) &&
+      lines[i + 1] === '' &&
+      i + 2 < lines.length &&
+      lines[i + 2] !== ''
+    ) {
+      i += 1;
+      offset += 1;
+    }
+  }
+  return result.join('\n');
+}
+
 // ── Default Prettier options ──────────────────────────────────────────────────
 
 // Applied as the floor for every document so formatting behaves consistently regardless of where the target Markdown lives.
@@ -178,6 +212,7 @@ async function formatMarkdown(text, options = {}) {
 
     formatted = unmaskAbbreviations(formatted, placeholders);
     formatted = expandThematicBreaks(formatted, hrLength);
+    formatted = rejoinLintNextLineComments(formatted);
   }
 
   // ② Table alignment overrides the tables produced by Prettier, using CJK visual width.
