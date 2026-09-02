@@ -2,7 +2,7 @@
   "name": "md-format-vscode",
   "displayName": "Markdown Formatter (CJK-aware tables)",
   "description": "Format Markdown with Prettier plus CJK/Emoji-aware table alignment. Tables stay aligned by visual width (full-width = 2), which Prettier's byte-based alignment gets wrong.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "publisher": "wujidadi",
   "license": "MIT",
   "icon": "icon.png",
