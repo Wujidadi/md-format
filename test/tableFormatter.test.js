@@ -22,6 +22,13 @@ test('pads CJK cells to their visual width (full-width = 2)', () => {
   );
 });
 
+test('treats enclosed alphanumerics (circled digits) as double-width', () => {
+  assert.strictEqual(
+    fmt('| 分類 | x |\n|---|---|\n| ① | y |\n| ②③ | z |\n'),
+    '| 分類 | x   |\n| ---- | --- |\n| ①   | y   |\n| ②③ | z   |\n',
+  );
+});
+
 test('honours left/center/right alignment markers', () => {
   assert.strictEqual(
     fmt('| L | C | R |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n'),

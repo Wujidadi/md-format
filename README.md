@@ -72,6 +72,7 @@ module.exports = {
     '\u2030-\u2031', // Per Mille Sign, Per Ten Thousand Sign
     '\u203b',        // Reference Mark
     '\u2190-\u2193', // Arrows (←, ↑, →, ↓)
+    '\u2460-\u24ff', // Enclosed Alphanumerics (①, ⑩, ⒜, Ⓐ)
     '\u25a0-\u25ff', // Geometric Shapes
     '\u2600-\u26ff', // Miscellaneous Symbols
     '\u2713',        // Check Mark
